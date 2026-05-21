@@ -11,8 +11,8 @@ export const getUser = async (
   _next: NextFunction,
 ) => {
   try {
-    const { data, error } = await supabase.from('posts').select('*')
-    res.send(error)
+    const { data, error } = await supabase.from('users').select('*')
+    res.send(data)
   } catch (error) {
     res.send(error)
   }
@@ -59,7 +59,7 @@ export const signup = async (
   }
 }
 
-export const login = async (
+export const signin = async (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -86,7 +86,7 @@ export const login = async (
     const token = jwt.sign(
       { id: profile.id, email: profile.email },
       process.env.JWT_SECRET as string,
-      { expiresIn: '99999999d' },
+      { expiresIn: '9d' },
     )
 
     res.json({
