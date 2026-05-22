@@ -141,21 +141,82 @@ export const signin = async (
   }
 }
 
+export const forgotPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { email } = req.body
+    const token = crypto.randomBytes(32).toString('hex')
+    const verifyLink = `mathly/password-reset?token=${token}`
+
+    const { data: user } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single()
+
+    if (!user) {
+      return res.send('email not found')
+    }
+
+    await supabase.from('password_reset_tokens').insert({
+      user_id: user.id,
+      token,
+      expires_at: new Date(Date.now() + 1000 * 60 * 60).toISOString(), // 1 hour
+    })
+
+    await resend.emails.send({
+      from: 'App <onboarding@resend.dev>',
+      to: email,
+      subject: 'Password reset',
+      html: `<p>Click <a href="${verifyLink}">here</a> to verify your account.</p>`,
+    })
+
+    res
+      .status(200)
+      .json({ message: 'Check your email to reset your password', token })
+  } catch (error) {
+    res.send(error)
+  }
+}
+
 export const resetPassword = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
-  const { email } = req.body
+  const { token } = req.query
+  const { newPassword } = req.body
+
   try {
-    const { data, error } = await resend.emails.send({
-      from: 'Acme <onboarding@resend.dev>',
-      to: [email],
-      subject: 'hello world',
-      html: '<p>it works!</p>',
-    })
-    res.send('email sent')
-  } catch (error) {
-    res.send(error)
+    const newHashedPassword = await bcrypt.hash(newPassword, 10)
+
+    const { data: resetRecord, error: tokenError } = await supabase
+      .from('password_reset_tokens')
+      .select('*')
+      .eq('token', token)
+      .gt('expires_at', new Date().toISOString())
+      .single()
+
+    if (tokenError || !resetRecord) {
+      return res.status(400).json({ message: 'Invalid or expired token' })
+    }
+
+    const { data, error: updateError } = await supabase
+      .from('users')
+      .update({ password: newHashedPassword })
+      .eq('id', resetRecord.user_id)
+
+    if (updateError)
+      return res.status(500).json({ message: 'Failed to update password' })
+
+    await supabase.from('password_reset_tokens').delete().eq('token', token)
+
+    res.status(200).json({ message: 'Password updated successfully' })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Internal server error'
+    res.json({message})
   }
 }
