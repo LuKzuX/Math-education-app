@@ -55,17 +55,17 @@ export const signup = async (
       return res.status(500).json({ message: profileError })
     }
 
-    const verifyLink = `/verify-email?token=${token}`
+    const verifyLink = `mathly/verify-email?token=${token}`
     await resend.emails.send({
-      from: 'MathQuest <noreply@yourdomain.com>',
-      to: [email],
+      from: 'App <onboarding@resend.dev>',
+      to: email,
       subject: 'Verify your email',
       html: `<p>Click <a href="${verifyLink}">here</a> to verify your account.</p>`,
     })
 
     res
       .status(200)
-      .json({ message: 'Check your email to confirm your account.' })
+      .json({ message: 'Check your email to confirm your account.', token })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal server error'
     res.status(500).json({ message })
