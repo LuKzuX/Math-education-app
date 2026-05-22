@@ -1,22 +1,25 @@
-import jwt from 'jsonwebtoken'
+import jwt, { JwtPayload } from 'jsonwebtoken'
 import { Request, Response, NextFunction } from 'express'
 
-export default function userAuth(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
+export default function userAuth(req, res, next) {
   const { authorization } = req.headers
   if (!authorization) {
     return res.status(401).json({ message: 'Unauthorized' })
   }
+
   const token = authorization.split(' ')[1]
+
   try {
     const verified = jwt.verify(
       token,
       process.env.JWT_SECRET || 'fallback-jwt-secret-key-for-development',
-    )
-    req.user = verified
+    ) as JwtPayload
+
+    req.user = {
+      id: verified.id,
+      email: verified.email,
+    }
+
     next()
   } catch (error) {
     if (error instanceof Error) {
@@ -26,4 +29,3 @@ export default function userAuth(
     }
   }
 }
-

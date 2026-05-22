@@ -1,7 +1,9 @@
 import { Router } from "express";
 export const router = Router()
-import { signup, signin, verifyEmail, forgotPassword, resetPassword } from "./controllers/userControllers";
+import userAuth from "./middlewares/userAuth";
+import { signup, signin, verifyEmail, forgotPassword, resetPassword, getUser } from "./controllers/userControllers";
 
+router.get('/user', userAuth, getUser)
 router.post('/signup', signup)
 router.post('/signin', signin)
 router.post('/verify-email', verifyEmail)

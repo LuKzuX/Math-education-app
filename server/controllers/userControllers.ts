@@ -9,11 +9,25 @@ import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-export const signup = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const getUser = async (req, res, next) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ message: 'Unauthorized' })
+    }
+
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', req.user.id)
+      .single()
+    if (error) return res.status(500).json({ message: error.message })
+    res.json(data)
+  } catch (error) {
+    res.send(error)
+  }
+}
+
+export const signup = async (req, res, next) => {
   try {
     const { username, email, password } = req.body
 
@@ -25,6 +39,7 @@ export const signup = async (
     if ((emailFound?.length ?? 0) >= 1) {
       return res.status(409).json({ message: 'This email already exists' })
     }
+    const hashedPassword = await bcrypt.hash(password, 10)
     const token = crypto.randomBytes(32).toString('hex')
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000)
 
@@ -33,7 +48,7 @@ export const signup = async (
       .insert({
         username,
         email,
-        password,
+        password: hashedPassword,
         token,
         expires_at: expires,
       })
@@ -59,12 +74,8 @@ export const signup = async (
   }
 }
 
-export const verifyEmail = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  const { token } = req.query
+export const verifyEmail = async (req, res, next) => {
+  const token = req.query.token as string
 
   const { data: pending } = await supabase
     .from('pending_users')
@@ -86,11 +97,7 @@ export const verifyEmail = async (
   res.json({ message: 'Email verified. You can now log in.' })
 }
 
-export const signin = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const signin = async (req, res, next) => {
   try {
     const { email, password } = req.body
 
@@ -128,11 +135,7 @@ export const signin = async (
   }
 }
 
-export const forgotPassword = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body
     const token = crypto.randomBytes(32).toString('hex')
@@ -145,7 +148,7 @@ export const forgotPassword = async (
       .single()
 
     if (!user) {
-      return res.send('email not found')
+      return res.status(404).json({ message: 'Email not found' })
     }
 
     await supabase.from('password_reset_tokens').insert({
@@ -169,12 +172,8 @@ export const forgotPassword = async (
   }
 }
 
-export const resetPassword = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  const { token } = req.query
+export const resetPassword = async (req, res, next) => {
+  const token = req.query.token as string
   const { newPassword } = req.body
 
   try {
@@ -204,6 +203,6 @@ export const resetPassword = async (
     res.status(200).json({ message: 'Password updated successfully' })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal server error'
-    res.json({message})
+    res.json({ message })
   }
 }
