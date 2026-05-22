@@ -9,19 +9,6 @@ import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-export const getUser = async (
-  req: Request,
-  res: Response,
-  _next: NextFunction,
-) => {
-  try {
-    const { data, error } = await supabase.from('users').select('*')
-    res.send(data)
-  } catch (error) {
-    res.send(error)
-  }
-}
-
 export const signup = async (
   req: Request,
   res: Response,
@@ -117,7 +104,7 @@ export const signin = async (
     if (profileError || !profile) {
       return res.status(401).json({ message: 'Invalid credentials' })
     }
-    const isValid = await bcrypt.compare(password, profile.password_hash)
+    const isValid = await bcrypt.compare(password, profile.password)
 
     if (!isValid) {
       return res.status(401).json({ message: 'Invalid credentials' })
