@@ -2,6 +2,7 @@ import { Router } from "express";
 export const router = Router()
 import userAuth from "./middlewares/userAuth";
 import { signup, signin, verifyEmail, forgotPassword, resetPassword, getUser } from "./controllers/userControllers";
+import {createPath} from './controllers/pathControllers'
 
 router.get('/user', userAuth, getUser)
 router.post('/signup', signup)
@@ -9,3 +10,5 @@ router.post('/signin', signin)
 router.post('/verify-email', verifyEmail)
 router.post('/forgot-password', forgotPassword)
 router.post('/reset-password', resetPassword)
+
+router.post('/new-path', createPath)
