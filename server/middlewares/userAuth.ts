@@ -1,5 +1,4 @@
 import jwt, { JwtPayload } from 'jsonwebtoken'
-import { Request, Response, NextFunction } from 'express'
 
 export default function userAuth(req, res, next) {
   const { authorization } = req.headers

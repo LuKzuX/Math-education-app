@@ -1,4 +1,3 @@
-import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import { supabase } from '../db/connection'
