@@ -17,21 +17,24 @@ export const challenge_randomizer = (variables_range, alternatives_options) => {
   }
 
   const evaluated_alternatives = resolved_alternatives.map((expr) =>
-    parser.evaluate(expr)
+    expr.split(',').map((part) => parser.evaluate(part.trim())),
   )
 
   const alternatives = []
   let alt = [...evaluated_alternatives]
+
   for (let i = 0; i < 4; i++) {
     let choosen = Math.floor(Math.random() * alt.length)
 
-    if (!Number.isInteger(alt[choosen])) {
-      const numerator = variables[0]
-      const denominator = variables[1]
-      if ((numerator / denominator) % 0) {
-        alt[choosen] = numerator / denominator
-      } else {
-        alt[choosen] = `${numerator}/${denominator}`
+    for (let j = 0; j < alt[choosen].length; j++) {
+      if (!Number.isInteger(alt[choosen][j])) {
+        const numerator = variables[0]
+        const denominator = variables[1]
+        if ((numerator % denominator) === 0) {
+          alt[choosen][j] = numerator / denominator
+        } else {
+          alt[choosen][j] = `${numerator}/${denominator}`
+        }
       }
     }
     alternatives.push(alt[choosen])
