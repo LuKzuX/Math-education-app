@@ -37,7 +37,18 @@ export const createTopic = async (req, res, next) => {
   res.send(data)
 }
 
-export const createChallenge = async (req, res, next) => {
+export const getChallenge = async (req, res, next) => {
+  const { challenge_id } = req.params
+  const {user_answer} = req.body
+   const { data, error } = await supabase
+    .from('challenges')
+    .select("*")
+    .eq("challenge_id", challenge_id)
+    .single()
+    res.send(data)
+}
+
+/*/admin */ export const createChallenge = async (req, res, next) => {
   const { topic_id } = req.params
   const {
     title,
@@ -58,7 +69,7 @@ export const createChallenge = async (req, res, next) => {
     variables_range,
     alternatives_options,
   )
-  
+
   const resolved_text = challenge_text.replace(
     /\{(\d+)\}/g,
     (_, i) => variables[Number(i)] ?? `{${i}}`,
