@@ -58,9 +58,7 @@ export const createChallenge = async (req, res, next) => {
     variables_range,
     alternatives_options,
   )
-  console.log('hit createChallenge')
-  console.log('body:', req.body)
-  console.log('params:', req.params)
+  
   const resolved_text = challenge_text.replace(
     /\{(\d+)\}/g,
     (_, i) => variables[Number(i)] ?? `{${i}}`,
