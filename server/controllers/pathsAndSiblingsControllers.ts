@@ -1,4 +1,5 @@
 import { supabase } from '../db/connection'
+import { challenge_randomizer } from '../utils/challenge_randomizer'
 
 export const createPath = async (req, res, next) => {
   const { name_url, title, description, icon, order } = req.body
@@ -49,43 +50,21 @@ export const createChallenge = async (req, res, next) => {
     xp_silver,
     xp_bronze,
     variables_range,
+    alternatives_options,
     hint_text,
   } = req.body
 
-  const variables = []
-  for (let i = 0; i < variables_range.length; i++) {
-    variables.push(Math.floor(Math.random() * variables_range[i]))
-  }
-
+  const { variables, alternatives } = challenge_randomizer(
+    variables_range,
+    alternatives_options,
+  )
+  console.log('hit createChallenge')
+  console.log('body:', req.body)
+  console.log('params:', req.params)
   const resolved_text = challenge_text.replace(
     /\{(\d+)\}/g,
     (_, i) => variables[Number(i)] ?? `{${i}}`,
   )
-
-  const alternatives = []
-  const alternatives_static = [
-    variables[0] + variables[1],
-    variables[0] * variables[1],
-    variables[0] + variables[1] + variables[0],
-    variables[1] - variables[0],
-  ]
-  let alt = alternatives_static
-  for (let i = 0; i < 4; i++) {
-    let choosen = Math.floor(Math.random() * alt.length)
-
-    if (!Number.isInteger(alt[choosen])) {
-      const numerator = variables[0]
-      const denominator = variables[1]
-      alt[choosen] = `${numerator}/${denominator}`
-    }
-    alternatives.push(alt[choosen])
-
-    alt = alt.filter((x) => x !== alt[choosen])
-  }
-  const letters = ['a', 'b', 'c', 'd']
-  for (let i = 0; i < alternatives.length; i++) {
-    alternatives[i] = { [letters[i]]: alternatives[i] }
-  }
 
   const { data, error } = await supabase
     .from('challenges')
