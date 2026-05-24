@@ -31,8 +31,43 @@ export const createTopic = async (req, res, next) => {
     })
     .select()
     .single()
-    console.log(req.params);
-    
+
+  if (error) return res.status(409).json(error)
+  res.send(data)
+}
+
+export const createChallenge = async (req, res, next) => {
+  const {
+    title,
+    challenge_text,
+    difficulty,
+    order,
+    gold_time_sec,
+    silver_time_sec,
+    xp_gold,
+    xp_silver,
+    xp_bronze,
+    variables,
+    hint_text,
+  } = req.body
+
+  const { data, error } = await supabase
+    .from('challenges')
+    .insert({
+      title,
+      challenge_text,
+      difficulty,
+      order,
+      gold_time_sec,
+      silver_time_sec,
+      xp_gold,
+      xp_silver,
+      xp_bronze,
+      variables,
+      hint_text,
+    })
+    .select()
+    .single()
 
   if (error) return res.status(409).json(error)
   res.send(data)
