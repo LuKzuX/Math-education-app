@@ -92,7 +92,6 @@ export const submitAnswer = async (req, res, next) => {
 }
 
 /*/admin */ export const createChallenge = async (req, res, next) => {
-  const parser = new Parser()
   const { topic_id } = req.params
   const {
     title,
