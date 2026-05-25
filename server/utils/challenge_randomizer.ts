@@ -1,6 +1,9 @@
 const Parser = require('expr-eval').Parser
 
-export const challenge_randomizer = (variables_range, alternatives_options) => {
+export const challenge_randomizer = (
+  variables_range,
+  alternatives_options
+) => {
   const parser = new Parser()
   const variables = []
   for (let i = 0; i < variables_range.length; i++) {
@@ -30,7 +33,7 @@ export const challenge_randomizer = (variables_range, alternatives_options) => {
       if (!Number.isInteger(alt[choosen][j])) {
         const numerator = variables[0]
         const denominator = variables[1]
-        if ((numerator % denominator) === 0) {
+        if (numerator % denominator === 0) {
           alt[choosen][j] = numerator / denominator
         } else {
           alt[choosen][j] = `${numerator}/${denominator}`
