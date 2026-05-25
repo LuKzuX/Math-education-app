@@ -1,5 +1,6 @@
 import { supabase } from '../db/connection'
 import { challenge_randomizer } from '../utils/challenge_randomizer'
+const Parser = require('expr-eval').Parser
 
 export const createPath = async (req, res, next) => {
   const { name_url, title, description, icon, order } = req.body
@@ -39,16 +40,37 @@ export const createTopic = async (req, res, next) => {
 
 export const getChallenge = async (req, res, next) => {
   const { challenge_id } = req.params
-  const {user_answer} = req.body
-   const { data, error } = await supabase
+  const { user_answer } = req.body
+  const { data, error } = await supabase
     .from('challenges')
-    .select("*")
-    .eq("challenge_id", challenge_id)
+    .select('*')
+    .eq('challenge_id', challenge_id)
     .single()
-    res.send(data)
+  const { variables, alternatives } = challenge_randomizer(
+    data.variables_range, // e.g. [10, 10] → two vars, each 1–10
+    data.alternatives_options, // e.g. ["{0}+{1}", "{0}-{1}", "{0}*{1}", "{0}/{1}", "{1}-{0}"]
+  )
+
+  let i = 0
+  const question_text = data.challenge_text.replace(
+    /\d+/g, // matches every number in the string
+    () => String(variables[i++] ?? 0), // replaces each with the next variable in order
+  )
+
+  const resolved_answer = data.correct_answer.replace(
+    /\{(\d+)\}/g, // ✅ matches {0}, {1} not raw numbers
+    (_, i) => String(variables[Number(i)]),
+  )
+  res.json({
+    text: question_text,
+    variables: variables,
+    alternatives: alternatives,
+    correct_answer: resolved_answer,
+  })
 }
 
 /*/admin */ export const createChallenge = async (req, res, next) => {
+  const parser = new Parser()
   const { topic_id } = req.params
   const {
     title,
@@ -62,6 +84,7 @@ export const getChallenge = async (req, res, next) => {
     xp_bronze,
     variables_range,
     alternatives_options,
+    correct_answer,
     hint_text,
   } = req.body
 
@@ -69,11 +92,19 @@ export const getChallenge = async (req, res, next) => {
     variables_range,
     alternatives_options,
   )
-
   const resolved_text = challenge_text.replace(
     /\{(\d+)\}/g,
     (_, i) => variables[Number(i)] ?? `{${i}}`,
   )
+
+  const resolved_answer = correct_answer.replace(
+    /\{(\d+)\}/g,
+    (_, i) => String(variables[Number(i)]) ?? `{${i}}`,
+  )
+
+  const evaluated_answer = resolved_answer
+    .split(',')
+    .map((part) => parser.evaluate(part.trim()))
 
   const { data, error } = await supabase
     .from('challenges')
@@ -91,6 +122,8 @@ export const getChallenge = async (req, res, next) => {
       variables_range,
       variables,
       hint_text,
+      alternatives_options,
+      correct_answer: evaluated_answer,
       alternatives,
     })
     .select()
