@@ -1,6 +1,7 @@
 import { supabase } from '../db/connection'
 import { challenge_randomizer } from '../utils/challenge_randomizer'
 const Parser = require('expr-eval').Parser
+import { attemptCache } from '../cache'
 
 export const createPath = async (req, res, next) => {
   const { name_url, title, description, icon, order } = req.body
@@ -39,8 +40,8 @@ export const createTopic = async (req, res, next) => {
 }
 
 export const getChallenge = async (req, res, next) => {
+  const parser = new Parser()
   const { challenge_id } = req.params
-  const { user_answer } = req.body
   const { data, error } = await supabase
     .from('challenges')
     .select('*')
@@ -58,15 +59,36 @@ export const getChallenge = async (req, res, next) => {
   )
 
   const resolved_answer = data.correct_answer.replace(
-    /\{(\d+)\}/g, // ✅ matches {0}, {1} not raw numbers
-    (_, i) => String(variables[Number(i)]),
+    /\{(\d+)\}/g,
+    (_, i) => String(variables[Number(i)]) ?? `{${i}}`,
   )
+
+  const evaluated_answer = resolved_answer
+    .split(',')
+    .map((part) => parser.evaluate(part.trim()))
+
   res.json({
     text: question_text,
     variables: variables,
     alternatives: alternatives,
-    correct_answer: resolved_answer,
+    correct_answer: evaluated_answer,
   })
+}
+
+export const submitAnswer = async (req, res, next) => {
+  const parser = new Parser()
+  const { challenge_id } = req.params
+  const { user_answer, elapsed_sec, hint_used } = req.body
+
+  // Retrieve the same variables from cache
+
+  const { data, error } = await supabase
+    .from('challenges')
+    .select('*')
+    .eq('challenge_id', challenge_id)
+    .single()
+
+  res.json(data)
 }
 
 /*/admin */ export const createChallenge = async (req, res, next) => {
@@ -97,15 +119,6 @@ export const getChallenge = async (req, res, next) => {
     (_, i) => variables[Number(i)] ?? `{${i}}`,
   )
 
-  const resolved_answer = correct_answer.replace(
-    /\{(\d+)\}/g,
-    (_, i) => String(variables[Number(i)]) ?? `{${i}}`,
-  )
-
-  const evaluated_answer = resolved_answer
-    .split(',')
-    .map((part) => parser.evaluate(part.trim()))
-
   const { data, error } = await supabase
     .from('challenges')
     .insert({
@@ -123,7 +136,7 @@ export const getChallenge = async (req, res, next) => {
       variables,
       hint_text,
       alternatives_options,
-      correct_answer: evaluated_answer,
+      correct_answer,
       alternatives,
     })
     .select()
