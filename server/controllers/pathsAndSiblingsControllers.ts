@@ -1,6 +1,7 @@
 import { data } from 'react-router-dom'
 import { supabase } from '../db/connection'
 import { challenge_randomizer } from '../utils/challenge_randomizer'
+import { error } from 'console'
 const Parser = require('expr-eval').Parser
 const NodeCache = require('node-cache')
 const myCache = new NodeCache({ stdTTL: 0, checkperiod: 120 })
@@ -162,17 +163,18 @@ export const submitAnswer = async (req, res, next) => {
         challenge_id: challenge_id,
         user_id: id,
         submitted_at: new Date().toISOString(),
-        elapsed_sec: Math.floor((Date.now() - cached_attempt.started_at) / 1000),
+        elapsed_sec: Math.floor(
+          (Date.now() - cached_attempt.started_at) / 1000,
+        ),
         is_correct: true,
         medal_earned: medal,
       })
       .select()
       .single()
-      console.log('data:', data)
-console.log('error:', error)
+
     return res.json(data)
   } else {
-    return res.json('errou')
+    return res.json("wrong answer")
   }
 }
 
