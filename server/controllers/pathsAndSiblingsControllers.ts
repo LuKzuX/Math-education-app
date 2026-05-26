@@ -1,7 +1,8 @@
 import { supabase } from '../db/connection'
 import { challenge_randomizer } from '../utils/challenge_randomizer'
 const Parser = require('expr-eval').Parser
-import { attemptCache } from '../cache'
+const NodeCache = require('node-cache')
+const myCache = new NodeCache({ stdTTL: 0, checkperiod: 120 })
 
 export const createPath = async (req, res, next) => {
   const { name_url, title, description, icon, order } = req.body
@@ -67,28 +68,88 @@ export const getChallenge = async (req, res, next) => {
     .split(',')
     .map((part) => parser.evaluate(part.trim()))
 
-  res.json({
+  const attemptStart = Date.now()
+
+  myCache.set(`challenge_${challenge_id}`, {
+    challenge_id: data.challenge_id,
     text: question_text,
     variables: variables,
     alternatives: alternatives,
     correct_answer: evaluated_answer,
+    title: data.title,
+    difficulty: data.difficulty,
+    gold_time_sec: data.gold_time_sec,
+    silver_time_sec: data.silver_time_sec,
+    xp_gold: data.xp_gold,
+    xp_silver: data.xp_silver,
+    xp_bronze: data.xp_bronze,
+    hint_text: data.hint_text,
+  })
+
+  myCache.set(`attempt_${challenge_id}`, {
+    started_at: Date.now(),
+    sec_elapsed: 0,
+  })
+
+  res.json({
+    challenge_id: data.challenge_id,
+    text: question_text,
+    variables: variables,
+    alternatives: alternatives,
+    correct_answer: evaluated_answer,
+    title: data.title,
+    difficulty: data.difficulty,
+    gold_time_sec: data.gold_time_sec,
+    silver_time_sec: data.silver_time_sec,
+    xp_gold: data.xp_gold,
+    xp_silver: data.xp_silver,
+    xp_bronze: data.xp_bronze,
+    hint_text: data.hint_text,
   })
 }
 
 export const submitAnswer = async (req, res, next) => {
-  const parser = new Parser()
   const { challenge_id } = req.params
-  const { user_answer, elapsed_sec, hint_used } = req.body
+  const { user_answer, hint_used } = req.body
+  const challengeData = myCache.get(`challenge_${challenge_id}`)
+  const attempt = myCache.get(`attempt_${challenge_id}`)
+  let user_answer_value = null
+  let isEqual = true
+  for (let i = 0; i < challengeData.alternatives.length; i++) {
+    let alternative_values = []
 
-  // Retrieve the same variables from cache
+    alternative_values.push(challengeData.alternatives[i][user_answer])
+    for (let j = 0; j < alternative_values.length; j++) {
+      if (alternative_values[j] !== undefined) {
+        user_answer_value = alternative_values[j]
+      }
+    }
+  }
+  for (let i = 0; i < user_answer_value.length; i++) {
+    for (let j = 0; j < challengeData.correct_answer.length; j++) {
+      if (user_answer_value[i] !== challengeData.correct_answer[j]) {
+        isEqual = false
+        break
+      } else {
+        continue
+      }
+    }
+  }
 
-  const { data, error } = await supabase
-    .from('challenges')
-    .select('*')
-    .eq('challenge_id', challenge_id)
-    .single()
+  if (isEqual) {
+    //attempt_isCorrect = true
+  } else {
+    return res.send('nooooooo')
+  }
 
-  res.json(data)
+  if (!challengeData || !attempt) {
+    return res
+      .status(404)
+      .json({ error: 'Challenge session not found or expired' })
+  }
+
+  const sec_elapsed = Math.floor((Date.now() - attempt.started_at) / 1000)
+  res.json({ challengeData, sec_elapsed })
 }
 
 /*/admin */ export const createChallenge = async (req, res, next) => {
