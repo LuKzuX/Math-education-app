@@ -109,6 +109,8 @@ export const getChallenge = async (req, res, next) => {
 }
 
 export const submitAnswer = async (req, res, next) => {
+  console.log("A");
+  
   const { challenge_id } = req.params
   const { id } = req.user
   const { user_answer, hint_used } = req.body
@@ -118,6 +120,7 @@ export const submitAnswer = async (req, res, next) => {
   let isEqual = true
   for (let i = 0; i < challengeData.alternatives.length; i++) {
     let alternative_values = []
+console.log(challengeData.alternatives[i][user_answer]);
 
     alternative_values.push(challengeData.alternatives[i][user_answer])
     for (let j = 0; j < alternative_values.length; j++) {
@@ -136,26 +139,33 @@ export const submitAnswer = async (req, res, next) => {
       }
     }
   }
-
+  
+  
   const cached_attempt = myCache.get(`attempt_${challenge_id}`)
   const cached_challenge = myCache.get(`challenge_${challenge_id}`)
+console.log(cached_challenge);
 
   if (!challengeData || !attempt) {
     return res
       .status(404)
       .json({ error: 'Challenge session not found or expired' })
   }
+
   if (isEqual) {
     let medal = ''
+    let xp_earned = 0
     if (cached_attempt.sec_elapsed <= cached_challenge.gold_time_sec) {
       medal = 'gold'
+      xp_earned = cached_challenge.xp_gold
     } else if (
-      cached_attempt.sec_elapsed > cached_challenge.gold_time_sec ||
+      cached_attempt.sec_elapsed > cached_challenge.gold_time_sec &&
       cached_attempt.sec_elapsed <= cached_challenge.silver_time_sec
     ) {
       medal = 'silver'
+      xp_earned = cached_challenge.xp_silver
     } else {
       medal = 'bronze'
+      xp_earned = cached_challenge.xp_bronze
     }
     const { data, error } = await supabase
       .from('attempts')
@@ -166,7 +176,7 @@ export const submitAnswer = async (req, res, next) => {
         elapsed_sec: Math.floor(
           (Date.now() - cached_attempt.started_at) / 1000,
         ),
-        is_correct: true,
+        xp_earned,
         medal_earned: medal,
       })
       .select()
@@ -174,7 +184,7 @@ export const submitAnswer = async (req, res, next) => {
 
     return res.json(data)
   } else {
-    return res.json("wrong answer")
+    return res.json('wrong answer')
   }
 }
 
