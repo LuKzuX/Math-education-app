@@ -1,3 +1,4 @@
+import { data } from 'react-router-dom'
 import { supabase } from '../db/connection'
 import { challenge_randomizer } from '../utils/challenge_randomizer'
 const Parser = require('expr-eval').Parser
@@ -68,8 +69,6 @@ export const getChallenge = async (req, res, next) => {
     .split(',')
     .map((part) => parser.evaluate(part.trim()))
 
-  const attemptStart = Date.now()
-
   myCache.set(`challenge_${challenge_id}`, {
     challenge_id: data.challenge_id,
     text: question_text,
@@ -110,6 +109,7 @@ export const getChallenge = async (req, res, next) => {
 
 export const submitAnswer = async (req, res, next) => {
   const { challenge_id } = req.params
+  const { id } = req.user
   const { user_answer, hint_used } = req.body
   const challengeData = myCache.get(`challenge_${challenge_id}`)
   const attempt = myCache.get(`attempt_${challenge_id}`)
@@ -136,20 +136,44 @@ export const submitAnswer = async (req, res, next) => {
     }
   }
 
-  if (isEqual) {
-    //attempt_isCorrect = true
-  } else {
-    return res.send('nooooooo')
-  }
+  const cached_attempt = myCache.get(`attempt_${challenge_id}`)
+  const cached_challenge = myCache.get(`challenge_${challenge_id}`)
 
   if (!challengeData || !attempt) {
     return res
       .status(404)
       .json({ error: 'Challenge session not found or expired' })
   }
-
-  const sec_elapsed = Math.floor((Date.now() - attempt.started_at) / 1000)
-  res.json({ challengeData, sec_elapsed })
+  if (isEqual) {
+    let medal = ''
+    if (cached_attempt.sec_elapsed <= cached_challenge.gold_time_sec) {
+      medal = 'gold'
+    } else if (
+      cached_attempt.sec_elapsed > cached_challenge.gold_time_sec ||
+      cached_attempt.sec_elapsed <= cached_challenge.silver_time_sec
+    ) {
+      medal = 'silver'
+    } else {
+      medal = 'bronze'
+    }
+    const { data, error } = await supabase
+      .from('attempts')
+      .insert({
+        challenge_id: challenge_id,
+        user_id: id,
+        submitted_at: new Date().toISOString(),
+        elapsed_sec: Math.floor((Date.now() - cached_attempt.started_at) / 1000),
+        is_correct: true,
+        medal_earned: medal,
+      })
+      .select()
+      .single()
+      console.log('data:', data)
+console.log('error:', error)
+    return res.json(data)
+  } else {
+    return res.json('errou')
+  }
 }
 
 /*/admin */ export const createChallenge = async (req, res, next) => {
