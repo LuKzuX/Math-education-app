@@ -1,20 +1,26 @@
 const Parser = require('expr-eval').Parser
 
-export const challenge_randomizer = (
-  variables_range,
-  alternatives_options
-) => {
+export const challenge_randomizer = (variables_range, alternatives_options) => {
   const parser = new Parser()
   const variables = []
   for (let i = 0; i < variables_range.length; i++) {
-    variables.push(Math.floor(Math.random() * variables_range[i] + 1))
+    const { min, max, even } = variables_range[i]
+    let random = Math.floor(Math.random() * (max - min)) + min
+
+    if (even) {
+      if (random % 2 !== 0) {
+        random = random + 1 <= max ? random + 1 : random - 1
+      }
+    }
+
+    variables.push(random)
   }
 
   const resolved_alternatives: string[] = []
   for (let i = 0; i < alternatives_options.length; i++) {
     const resolved = alternatives_options[i].replace(
       /\{(\d+)\}/g,
-      (_, i) => variables[Number(i)] ?? `{${i}}`,
+      (_, index) => variables[Number(index)] ?? `{${index}}`,
     )
     resolved_alternatives.push(resolved)
   }
