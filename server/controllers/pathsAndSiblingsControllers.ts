@@ -117,7 +117,7 @@ export const submitAnswer = async (req, res, next) => {
   let user_answer_value = null
   let isEqual = true
   if (!challengeData) {
-    return res.send("invalid attempt")
+    return res.send('invalid attempt')
   }
   for (let i = 0; i < challengeData.alternatives.length; i++) {
     let alternative_values = []
@@ -165,24 +165,40 @@ export const submitAnswer = async (req, res, next) => {
       medal = 'bronze'
       xp_earned = cached_challenge.xp_bronze
     }
+
+    const attempt_time = Math.floor(
+      (Date.now() - cached_attempt.started_at) / 1000,
+    )
     const { data, error } = await supabase
       .from('attempts')
-      .insert({
-        challenge_id: challenge_id,
-        user_id: id,
-        submitted_at: new Date().toISOString(),
-        elapsed_sec: Math.floor(
-          (Date.now() - cached_attempt.started_at) / 1000,
-        ),
-        xp_earned,
-        medal_earned: medal,
-      })
-      .select()
+      .select('*')
+      .eq('user_id', id)
+      .eq('challenge_id', challenge_id)
       .single()
 
-    myCache.flushAll()
+    if (attempt_time < data.elapsed_sec) {
+      const { data, error } = await supabase
+        .from('attempts')
+        .upsert(
+          {
+            challenge_id: challenge_id,
+            user_id: id,
+            submitted_at: new Date().toISOString(),
+            elapsed_sec: Math.floor(
+              (Date.now() - cached_attempt.started_at) / 1000,
+            ),
+            xp_earned,
+            medal_earned: medal,
+          },
+          { onConflict: 'user_id,challenge_id' },
+        )
+        .select()
+        .single()
 
-    return res.json(data)
+      myCache.flushAll()
+
+      return res.json(data)
+    }
   } else {
     myCache.flushAll()
 
