@@ -116,6 +116,9 @@ export const submitAnswer = async (req, res, next) => {
   const attempt = myCache.get(`attempt_${challenge_id}`)
   let user_answer_value = null
   let isEqual = true
+  if (!challengeData) {
+    return res.send("invalid attempt")
+  }
   for (let i = 0; i < challengeData.alternatives.length; i++) {
     let alternative_values = []
 
@@ -177,8 +180,12 @@ export const submitAnswer = async (req, res, next) => {
       .select()
       .single()
 
+    myCache.flushAll()
+
     return res.json(data)
   } else {
+    myCache.flushAll()
+
     return res.json('wrong answer')
   }
 }
