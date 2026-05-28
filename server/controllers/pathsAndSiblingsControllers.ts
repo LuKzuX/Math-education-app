@@ -175,59 +175,58 @@ export const submitAnswer = async (req, res, next) => {
       xp_earned = cached_challenge.xp_bronze
     }
 
-   const { data: attemptData } = await supabase
-  .from('attempts')
-  .select('*')
-  .eq('user_id', id)
-  .eq('challenge_id', challenge_id)
-  .maybeSingle()
+    const { data: attemptData } = await supabase
+      .from('attempts')
+      .select('*')
+      .eq('user_id', id)
+      .eq('challenge_id', challenge_id)
+      .maybeSingle()
 
-if (!attemptData) {
-  xp_earned = xp_medals[medal] 
+    if (!attemptData) {
+      xp_earned = xp_medals[medal]
 
-  await supabase
-    .from('attempts')
-    .insert({
-      user_id: id,
-      challenge_id: challenge_id,
-      elapsed_sec: attempt_time,
-      medal_earned: medal,
-      xp_earned: xp_medals[medal],
-    })
-} else {
-  xp_earned = xp_medals[medal] >= attemptData.xp_earned
-    ? xp_medals[medal] - attemptData.xp_earned
-    : 0
+      await supabase.from('attempts').insert({
+        user_id: id,
+        challenge_id: challenge_id,
+        elapsed_sec: attempt_time,
+        medal_earned: medal,
+        xp_earned: xp_medals[medal],
+      })
+    } else {
+      xp_earned =
+        xp_medals[medal] >= attemptData.xp_earned
+          ? xp_medals[medal] - attemptData.xp_earned
+          : 0
 
-  await supabase
-    .from('attempts')
-    .update({
-      elapsed_sec: attempt_time,
-      medal_earned: medal,
-      xp_earned: xp_medals[medal],
-    })
-    .eq('user_id', id)
-    .eq('challenge_id', challenge_id)
-}
+      await supabase
+        .from('attempts')
+        .update({
+          elapsed_sec: attempt_time,
+          medal_earned: medal,
+          xp_earned: xp_medals[medal],
+        })
+        .eq('user_id', id)
+        .eq('challenge_id', challenge_id)
+    }
 
-const { data: user } = await supabase
-  .from('users')
-  .select('total_xp')
-  .eq('id', id)
-  .single()
+    const { data: user } = await supabase
+      .from('users')
+      .select('total_xp')
+      .eq('id', id)
+      .single()
 
-const { data: userData } = await supabase
-  .from('users')
-  .update({ total_xp: user.total_xp + xp_earned })
-  .eq('id', id)
-  .select()
-  .single()
+    const { data: userData } = await supabase
+      .from('users')
+      .update({ total_xp: user.total_xp + xp_earned })
+      .eq('id', id)
+      .select()
+      .single()
 
-myCache.flushAll()
-return res.send(userData)
+    myCache.flushAll()
+    return res.send(userData)
+  }
   myCache.flushAll()
   res.send('wrong answer')
-}
 }
 /*/admin */ export const createChallenge = async (req, res, next) => {
   const { topic_id } = req.params
