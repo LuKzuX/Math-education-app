@@ -169,82 +169,10 @@ export const submitAnswer = async (req, res, next) => {
       medal = 'bronze'
       xp_earned = cached_challenge.xp_bronze
     }
-    console.log(xp_earned)
 
     const attempt_time = Math.floor(
       (Date.now() - cached_attempt.started_at) / 1000,
     )
-    const { data: existing, error: err } = await supabase
-      .from('attempts')
-      .select('*')
-      .eq('user_id', id)
-      .eq('challenge_id', challenge_id)
-      .maybeSingle()
-
-    if (!existing) {
-      const { data, error } = await supabase
-        .from('attempts')
-        .insert({
-          challenge_id: challenge_id,
-          user_id: id,
-          submitted_at: new Date().toISOString(),
-          elapsed_sec: Math.floor(
-            (Date.now() - cached_attempt.started_at) / 1000,
-          ),
-          xp_earned,
-          medal_earned: medal,
-        })
-        .select()
-        .single()
-      const { data: currentUser } = await supabase
-        .from('users')
-        .select('total_xp')
-        .eq('id', id)
-        .single()
-
-      await supabase
-        .from('users')
-        .update({ total_xp: currentUser.total_xp + xp_earned })
-        .eq('id', id)
-      return res.json(data)
-    } else {
-      if (attempt_time < existing.elapsed_sec) {
-        const { data, error } = await supabase
-          .from('attempts')
-          .upsert(
-            {
-              challenge_id: challenge_id,
-              user_id: id,
-              submitted_at: new Date().toISOString(),
-              elapsed_sec: Math.floor(
-                (Date.now() - cached_attempt.started_at) / 1000,
-              ),
-              xp_earned,
-              medal_earned: medal,
-            },
-            { onConflict: 'user_id,challenge_id' },
-          )
-          .select()
-          .single()
-        const { data: currentUser } = await supabase
-          .from('users')
-          .select('total_xp')
-          .eq('id', id)
-          .single()
-
-        await supabase
-          .from('users')
-          .update({ total_xp: currentUser.total_xp + xp_earned })
-          .eq('id', id)
-
-        myCache.flushAll()
-
-        return res.json(data)
-      } else {
-        myCache.flushAll()
-        return res.json({ message: 'not a new best', existing })
-      }
-    }
   }
 }
 
