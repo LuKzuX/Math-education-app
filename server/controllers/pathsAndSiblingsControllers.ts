@@ -2,7 +2,6 @@ import { data } from 'react-router-dom'
 import { supabase } from '../db/connection'
 import { challenge_randomizer } from '../utils/challenge_randomizer'
 import { error } from 'console'
-import Stream from 'stream'
 const Parser = require('expr-eval').Parser
 const NodeCache = require('node-cache')
 const myCache = new NodeCache({ stdTTL: 0, checkperiod: 120 })
@@ -149,12 +148,6 @@ export const submitAnswer = async (req, res, next) => {
       .json({ error: 'Challenge session not found or expired' })
   }
 
-  const { data: user } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', id)
-    .single()
-
   if (isEqual) {
     let medal = ''
     let xp_earned = 0
@@ -216,6 +209,12 @@ export const submitAnswer = async (req, res, next) => {
         .eq('challenge_id', challenge_id)
     }
 
+    const { data: user } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', id)
+      .single()
+
     const { data: userData } = await supabase
       .from('users')
       .update({
@@ -229,14 +228,21 @@ export const submitAnswer = async (req, res, next) => {
     myCache.flushAll()
     return res.send(userData)
   }
-  myCache.flushAll()
-  const { data: userData } = await supabase
+
+  const { data: user } = await supabase
     .from('users')
-    .update({ streak: (user.streak = 0) })
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  await supabase
+    .from('users')
+    .update({ streak: (user.streak = 0), lives: (user.lives -= 1) })
     .eq('id', id)
     .select()
     .single()
-  res.send('wrong answer')
+  myCache.flushAll()
+  res.send(user)
 }
 /*/admin */ export const createChallenge = async (req, res, next) => {
   const { topic_id } = req.params
