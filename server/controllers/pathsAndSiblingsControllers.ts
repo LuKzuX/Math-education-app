@@ -121,7 +121,6 @@ export const submitAnswer = async (req, res, next) => {
   }
   for (let i = 0; i < challengeData.alternatives.length; i++) {
     let alternative_values = []
-
     alternative_values.push(challengeData.alternatives[i][user_answer])
     for (let j = 0; j < alternative_values.length; j++) {
       if (alternative_values[j] !== undefined) {
@@ -129,17 +128,13 @@ export const submitAnswer = async (req, res, next) => {
       }
     }
   }
-  /*  see this later*/ outer: for (
-    let i = 0;
-    i < user_answer_value.length;
-    i++
-  ) {
-    for (let j = 0; j < challengeData.correct_answer.length; j++) {
-      if (user_answer_value[i] !== challengeData.correct_answer[j]) {
+  if (user_answer_value.length !== challengeData.correct_answer.length) {
+    isEqual = false
+  } else {
+    for (let i = 0; i < user_answer_value.length; i++) {
+      if (user_answer_value[i] !== challengeData.correct_answer[i]) {
         isEqual = false
-        break outer
-      } else {
-        continue
+        break
       }
     }
   }
@@ -156,12 +151,22 @@ export const submitAnswer = async (req, res, next) => {
   if (isEqual) {
     let medal = ''
     let xp_earned = 0
-    if (cached_attempt.sec_elapsed <= cached_challenge.gold_time_sec) {
+    const xp_medals = {
+      bronze: cached_challenge.xp_bronze,
+      silver: cached_challenge.xp_silver,
+      gold: cached_challenge.xp_gold,
+    }
+
+    const attempt_time = Math.floor(
+      (Date.now() - cached_attempt.started_at) / 1000,
+    )
+
+    if (attempt_time <= cached_challenge.gold_time_sec) {
       medal = 'gold'
       xp_earned = cached_challenge.xp_gold
     } else if (
-      cached_attempt.sec_elapsed > cached_challenge.gold_time_sec &&
-      cached_attempt.sec_elapsed <= cached_challenge.silver_time_sec
+      attempt_time > cached_challenge.gold_time_sec &&
+      attempt_time <= cached_challenge.silver_time_sec
     ) {
       medal = 'silver'
       xp_earned = cached_challenge.xp_silver
@@ -170,12 +175,60 @@ export const submitAnswer = async (req, res, next) => {
       xp_earned = cached_challenge.xp_bronze
     }
 
-    const attempt_time = Math.floor(
-      (Date.now() - cached_attempt.started_at) / 1000,
-    )
-  }
+   const { data: attemptData } = await supabase
+  .from('attempts')
+  .select('*')
+  .eq('user_id', id)
+  .eq('challenge_id', challenge_id)
+  .maybeSingle()
+
+if (!attemptData) {
+  xp_earned = xp_medals[medal] 
+
+  await supabase
+    .from('attempts')
+    .insert({
+      user_id: id,
+      challenge_id: challenge_id,
+      elapsed_sec: attempt_time,
+      medal_earned: medal,
+      xp_earned: xp_medals[medal],
+    })
+} else {
+  xp_earned = xp_medals[medal] >= attemptData.xp_earned
+    ? xp_medals[medal] - attemptData.xp_earned
+    : 0
+
+  await supabase
+    .from('attempts')
+    .update({
+      elapsed_sec: attempt_time,
+      medal_earned: medal,
+      xp_earned: xp_medals[medal],
+    })
+    .eq('user_id', id)
+    .eq('challenge_id', challenge_id)
 }
 
+const { data: user } = await supabase
+  .from('users')
+  .select('total_xp')
+  .eq('id', id)
+  .single()
+
+const { data: userData } = await supabase
+  .from('users')
+  .update({ total_xp: user.total_xp + xp_earned })
+  .eq('id', id)
+  .select()
+  .single()
+
+myCache.flushAll()
+return res.send(userData)
+  myCache.flushAll()
+  res.send('wrong answer')
+}
+}
 /*/admin */ export const createChallenge = async (req, res, next) => {
   const { topic_id } = req.params
   const {
