@@ -108,17 +108,11 @@ export const getChallenge = async (req, res, next) => {
   })
 }
 
-export const getPaths = async (req, res, next) => {
+export const getPaths = async (req, res, next) => {}
 
-}
+export const getTopics = async (req, res, next) => {}
 
-export const getTopics = async (req, res, next) => {
-
-}
-
-export const getChallengesByTopic = async (req, res, next) => {
-  
-}
+export const getChallengesByTopic = async (req, res, next) => {}
 
 export const submitAnswer = async (req, res, next) => {
   const { challenge_id } = req.params
@@ -262,7 +256,6 @@ export const submitAnswer = async (req, res, next) => {
     title,
     challenge_text,
     difficulty,
-    order,
     gold_time_sec,
     silver_time_sec,
     xp_gold,
@@ -273,6 +266,16 @@ export const submitAnswer = async (req, res, next) => {
     correct_answer,
     hint_text,
   } = req.body
+
+  const { data: last } = await supabase
+    .from('challenges')
+    .select('order')
+    .eq('topic_id', topic_id)
+    .order('order', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const order = (last?.order ?? 0) + 1
 
   const { variables, alternatives } = challenge_randomizer(
     variables_range,
