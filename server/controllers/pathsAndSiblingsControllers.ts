@@ -108,6 +108,18 @@ export const getChallenge = async (req, res, next) => {
   })
 }
 
+export const getPaths = async (req, res, next) => {
+
+}
+
+export const getTopics = async (req, res, next) => {
+
+}
+
+export const getChallengesByTopic = async (req, res, next) => {
+  
+}
+
 export const submitAnswer = async (req, res, next) => {
   const { challenge_id } = req.params
   const { id } = req.user
