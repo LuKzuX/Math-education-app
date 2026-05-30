@@ -2,7 +2,7 @@ import { Router } from "express";
 export const router = Router()
 import userAuth from "./middlewares/userAuth";
 import { signup, signin, verifyEmail, forgotPassword, resetPassword, getUser, getUserAttempts } from "./controllers/userControllers";
-import {createPath, createTopic, getChallenge, submitAnswer, createChallenge} from './controllers/pathsAndSiblingsControllers'
+import {createPath, createTopic, getPaths, getTopics, getChallenges, getChallenge, submitAnswer, createChallenge} from './controllers/pathsAndSiblingsControllers'
 
 router.get('/user', userAuth, getUser)
 router.post('/signup', signup)
@@ -13,6 +13,9 @@ router.post('/reset-password', resetPassword)
 router.get('/user-attempts', userAuth, getUserAttempts)
 
 
+router.get('/paths', getPaths)
+router.get('/paths/:path_id/topics', getTopics)
+router.get('/topics/:topic_id/challenges', getChallenges)
 router.post('/new-path', createPath)
 router.post('/new-topic/:path_id', createTopic)
 router.post('/new-challenge/:topic_id', createChallenge)
