@@ -42,6 +42,15 @@ export const createTopic = async (req, res, next) => {
   res.send(data)
 }
 
+export const getChallenges = async (req, res, next) => {
+  const { topic_id } = req.params
+  const { data, error } = await supabase
+    .from('challenges')
+    .select('*')
+    .eq('topic_id', topic_id)
+  res.send(data)
+}
+
 export const getChallenge = async (req, res, next) => {
   const parser = new Parser()
   const { challenge_id } = req.params
@@ -96,7 +105,6 @@ export const getChallenge = async (req, res, next) => {
     text: question_text,
     variables: variables,
     alternatives: alternatives,
-    correct_answer: evaluated_answer,
     title: data.title,
     difficulty: data.difficulty,
     gold_time_sec: data.gold_time_sec,
@@ -108,16 +116,26 @@ export const getChallenge = async (req, res, next) => {
   })
 }
 
-export const getPaths = async (req, res, next) => {}
+export const getPaths = async (req, res, next) => {
+  const { data, error } = await supabase.from('paths').select('*')
+  res.send(data)
+}
 
-export const getTopics = async (req, res, next) => {}
+export const getTopics = async (req, res, next) => {
+  const { path_id } = req.params
+  const { data, error } = await supabase
+    .from('topics')
+    .select('*')
+    .eq('topic_id', path_id)
+  res.send(data)
+}
 
 export const getChallengesByTopic = async (req, res, next) => {
-  const {topic_id} = req.params
-  const {data, error} =  await supabase 
-  .from("challenges")
-  .select("*")
-  .eq("topic_id", topic_id)
+  const { topic_id } = req.params
+  const { data, error } = await supabase
+    .from('challenges')
+    .select('*')
+    .eq('topic_id', topic_id)
   res.send(data)
 }
 
