@@ -112,7 +112,14 @@ export const getPaths = async (req, res, next) => {}
 
 export const getTopics = async (req, res, next) => {}
 
-export const getChallengesByTopic = async (req, res, next) => {}
+export const getChallengesByTopic = async (req, res, next) => {
+  const {topic_id} = req.params
+  const {data, error} =  await supabase 
+  .from("challenges")
+  .select("*")
+  .eq("topic_id", topic_id)
+  res.send(data)
+}
 
 export const submitAnswer = async (req, res, next) => {
   const { challenge_id } = req.params

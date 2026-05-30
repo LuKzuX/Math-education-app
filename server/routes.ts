@@ -1,7 +1,7 @@
 import { Router } from "express";
 export const router = Router()
 import userAuth from "./middlewares/userAuth";
-import { signup, signin, verifyEmail, forgotPassword, resetPassword, getUser } from "./controllers/userControllers";
+import { signup, signin, verifyEmail, forgotPassword, resetPassword, getUser, getUserAttempts } from "./controllers/userControllers";
 import {createPath, createTopic, getChallenge, submitAnswer, createChallenge} from './controllers/pathsAndSiblingsControllers'
 
 router.get('/user', userAuth, getUser)
@@ -10,6 +10,8 @@ router.post('/signin', signin)
 router.post('/verify-email', verifyEmail)
 router.post('/forgot-password', forgotPassword)
 router.post('/reset-password', resetPassword)
+router.get('/user-attempts', userAuth, getUserAttempts)
+
 
 router.post('/new-path', createPath)
 router.post('/new-topic/:path_id', createTopic)
