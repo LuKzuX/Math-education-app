@@ -26,6 +26,15 @@ export const getUser = async (req, res, next) => {
   }
 }
 
+export const getUserAttempts = async (req, res, next) => {
+  const { id } = req.user
+  const {data, error} = await supabase
+  .from("attempts")
+  .select("*")
+  .eq('user_id', id)
+  res.json(data)
+}
+
 export const signup = async (req, res, next) => {
   try {
     const { username, email, password } = req.body
