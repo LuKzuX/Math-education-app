@@ -35,6 +35,10 @@ export const getUserAttempts = async (req, res, next) => {
   res.json(data)
 }
 
+export const getUserAchievments = async (req, res, next ) => {
+
+}
+
 export const signup = async (req, res, next) => {
   try {
     const { username, email, password } = req.body
