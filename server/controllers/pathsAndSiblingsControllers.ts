@@ -180,6 +180,7 @@ export const submitAnswer = async (req, res, next) => {
   }
 
   if (isEqual) {
+    let streak = 0
     let medal = ''
     let xp_earned = 0
     const xp_medals = {
@@ -228,8 +229,7 @@ export const submitAnswer = async (req, res, next) => {
         xp_medals[medal] >= attemptData.xp_earned
           ? xp_medals[medal] - attemptData.xp_earned
           : 0
-
-      await supabase
+      const { data, error } = await supabase
         .from('attempts')
         .update({
           elapsed_sec: attempt_time,
@@ -238,6 +238,9 @@ export const submitAnswer = async (req, res, next) => {
         })
         .eq('user_id', id)
         .eq('challenge_id', challenge_id)
+        .select()
+
+      streak = data ? (streak = 0) : (streak = 1)
     }
 
     const { data: user } = await supabase
@@ -250,7 +253,7 @@ export const submitAnswer = async (req, res, next) => {
       .from('users')
       .update({
         total_xp: user.total_xp + xp_earned,
-        streak: (user.streak += 1),
+        streak: (user.streak += streak),
       })
       .eq('id', id)
       .select()
@@ -259,6 +262,14 @@ export const submitAnswer = async (req, res, next) => {
     myCache.flushAll()
     return res.send(userData)
   }
+  let lostLives = 0
+  const { data, error } = await supabase
+    .from('attempts')
+    .select('*')
+    .eq('user_id', id)
+    .eq('challenge_id', challenge_id)
+
+  lostLives = data ? (lostLives = 0) : (lostLives = 1)
 
   const { data: user } = await supabase
     .from('users')
@@ -268,7 +279,7 @@ export const submitAnswer = async (req, res, next) => {
 
   await supabase
     .from('users')
-    .update({ streak: (user.streak = 0), lives: (user.lives -= 1) })
+    .update({ streak: (user.streak = 0), lives: (user.lives -= lostLives) })
     .eq('id', id)
     .select()
     .single()
