@@ -3,6 +3,7 @@ export const router = Router()
 import userAuth from "./middlewares/userAuth";
 import { signup, signin, verifyEmail, forgotPassword, resetPassword, getUser, getUserAttempts } from "./controllers/userControllers";
 import {createPath, createTopic, getPaths, getTopics, getChallenges, getChallenge, submitAnswer, createChallenge} from './controllers/pathsAndSiblingsControllers'
+import { getAchievements, getUserAchievements, grantAchievement } from "./controllers/achievments";
 
 router.get('/user', userAuth, getUser)
 router.post('/signup', signup)
@@ -21,3 +22,7 @@ router.post('/new-topic/:path_id', createTopic)
 router.post('/new-challenge/:topic_id', createChallenge)
 router.get('/challenge/:challenge_id', getChallenge)
 router.post('/challenge/:challenge_id', userAuth, submitAnswer)
+
+
+router.get('/achievements', getAchievements)
+router.get('/user/achievements', userAuth, getUserAchievements)

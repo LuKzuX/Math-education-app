@@ -6,6 +6,21 @@ const Parser = require('expr-eval').Parser
 const NodeCache = require('node-cache')
 const myCache = new NodeCache({ stdTTL: 0, checkperiod: 120 })
 
+const checkAndGrantAchievements = async (user_id: string) => {
+  const { data: user, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', user_id)
+    .single()
+
+  // fetch attempt stats
+  const { data: attempts, error: err } = await supabase
+    .from('attempts')
+    .select('*')
+    .eq('user_id', user_id)
+    .eq('is_correct', true)
+}
+
 export const createPath = async (req, res, next) => {
   const { name_url, title, description, icon, order } = req.body
   const { data, error } = await supabase
@@ -261,30 +276,32 @@ export const submitAnswer = async (req, res, next) => {
 
     myCache.flushAll()
     return res.send(userData)
+  } else {
+    let lostLives = 0
+    const { data, error } = await supabase
+      .from('attempts')
+      .select('*')
+      .eq('user_id', id)
+      .eq('challenge_id', challenge_id)
+
+    lostLives = data ? (lostLives = 0) : (lostLives = 1)
+
+    const { data: user } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    await supabase
+      .from('users')
+      .update({ streak: (user.streak = 0), lives: (user.lives -= lostLives) })
+      .eq('id', id)
+      .select()
+      .single()
+    myCache.flushAll()
+    res.send(user)
   }
-  let lostLives = 0
-  const { data, error } = await supabase
-    .from('attempts')
-    .select('*')
-    .eq('user_id', id)
-    .eq('challenge_id', challenge_id)
-
-  lostLives = data ? (lostLives = 0) : (lostLives = 1)
-
-  const { data: user } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', id)
-    .single()
-
-  await supabase
-    .from('users')
-    .update({ streak: (user.streak = 0), lives: (user.lives -= lostLives) })
-    .eq('id', id)
-    .select()
-    .single()
-  myCache.flushAll()
-  res.send(user)
+  checkAndGrantAchievements(id)
 }
 /*/admin */ export const createChallenge = async (req, res, next) => {
   const { topic_id } = req.params
