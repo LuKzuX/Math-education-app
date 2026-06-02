@@ -18,7 +18,31 @@ const checkAndGrantAchievements = async (user_id: string) => {
     .from('attempts')
     .select('*')
     .eq('user_id', user_id)
-    .eq('is_correct', true)
+
+  const { data: achievements } = await supabase
+    .from('achievements')
+    .select('*')
+
+  const golds = attempts?.filter(attempt => attempt.medal_earned === 'gold').length ?? 0
+  const totalCorrect = attempts?.length ?? 0
+  const level = user.level
+  const streak = user.streak
+
+  const stats = {
+  golds,        // → condition field: "golds" 
+  totalCorrect, // → condition field: "totalCorrect"
+  streak,       // → condition field: "streak"
+  total_xp: user?.total_xp ?? 0  // → condition field: "total_xp"
+}
+
+  const achievementsConditions = achievements.filter((field) => field.condition) 
+  
+  
+  
+  
+  
+
+  
 }
 
 export const createPath = async (req, res, next) => {
@@ -274,6 +298,7 @@ export const submitAnswer = async (req, res, next) => {
       .select()
       .single()
 
+    checkAndGrantAchievements(id)
     myCache.flushAll()
     return res.send(userData)
   } else {
@@ -301,7 +326,6 @@ export const submitAnswer = async (req, res, next) => {
     myCache.flushAll()
     res.send(user)
   }
-  checkAndGrantAchievements(id)
 }
 /*/admin */ export const createChallenge = async (req, res, next) => {
   const { topic_id } = req.params
