@@ -19,30 +19,50 @@ const checkAndGrantAchievements = async (user_id: string) => {
     .select('*')
     .eq('user_id', user_id)
 
-  const { data: achievements } = await supabase
-    .from('achievements')
-    .select('*')
+  const { data: achievements } = await supabase.from('achievements').select('*')
 
-  const golds = attempts?.filter(attempt => attempt.medal_earned === 'gold').length ?? 0
+  const golds =
+    attempts?.filter((attempt) => attempt.medal_earned === 'gold').length ?? 0
   const totalCorrect = attempts?.length ?? 0
   const level = user.level
   const streak = user.streak
 
   const stats = {
-  golds,        // → condition field: "golds" 
-  totalCorrect, // → condition field: "totalCorrect"
-  streak,       // → condition field: "streak"
-  total_xp: user?.total_xp ?? 0  // → condition field: "total_xp"
-}
+    golds,
+    totalCorrect,
+    streak,
+    level,
+  }
 
-  const achievementsConditions = achievements.filter((field) => field.condition) 
-  
-  
-  
-  
-  
+  const achievementsConditions = achievements.filter((field) => field.condition)
+  for (let i = 0; i < achievementsConditions.length; i++) {
+    const achievement = achievementsConditions[i]
 
-  
+    const { field, value, operator } = achievement.condition
+    if (
+      (operator === '>=' && stats[field] >= value) ||
+      (operator === '<=' && stats[field] <= value) ||
+      (operator === '>' && stats[field] > value) ||
+      (operator === '<' && stats[field] < value) ||
+      (operator === '==' && stats[field] === value)
+    ) {
+      const { data: isAchievementEarned, error } = await supabase
+        .from('user_achievements')
+        .select('*')
+        .eq('achievement_id', achievement.achievement_id)
+        .eq('user_id', user_id)
+
+      if (!isAchievementEarned) {
+        await supabase.from('user_achievements').insert({
+          user_id,
+          achievement_id: achievement.achievement_id,
+          earned_at: new Date().toISOString(),
+        })
+      } else {
+        console.log('user already has this achievement' + achievement.title)
+      }
+    }
+  }
 }
 
 export const createPath = async (req, res, next) => {
