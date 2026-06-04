@@ -1,11 +1,14 @@
 const Parser = require('expr-eval').Parser
 
-export const challenge_randomizer = (variables_range, alternatives_options) => {
+export const challenge_randomizer = (
+  variables_range: { min: number; max: number; even?: boolean }[],
+  alternatives_options: string[],
+): { variables: number[]; alternatives: object[] } => {
   const parser = new Parser()
-  const variables = []
+  const variables: number[] = []
   for (let i = 0; i < variables_range.length; i++) {
     const { min, max, even } = variables_range[i]
-    let random = Math.floor(Math.random() * (max - min)) + min
+    let random: number = Math.floor(Math.random() * (max - min)) + min
 
     if (even) {
       if (random % 2 !== 0) {
@@ -18,9 +21,8 @@ export const challenge_randomizer = (variables_range, alternatives_options) => {
 
   const resolved_alternatives: string[] = []
   for (let i = 0; i < alternatives_options.length; i++) {
-    const resolved = alternatives_options[i].replace(
-      /\{(\d+)\}/g,
-      (_, index) => variables[Number(index)] ?? `{${index}}`,
+    const resolved = alternatives_options[i].replace(/\{(\d+)\}/g, (_, index) =>
+      String(variables[Number(index)] ?? `{${index}}`),
     )
     resolved_alternatives.push(resolved)
   }
@@ -29,7 +31,7 @@ export const challenge_randomizer = (variables_range, alternatives_options) => {
     expr.split(',').map((part) => parser.evaluate(part.trim())),
   )
 
-  const alternatives = []
+  const alternatives: object[] = []
   let alt = [...evaluated_alternatives]
 
   for (let i = 0; i < 4; i++) {

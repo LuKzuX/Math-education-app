@@ -1,6 +1,7 @@
+import { RequestParamHandler } from 'express'
 import jwt, { JwtPayload } from 'jsonwebtoken'
 
-export default function userAuth(req, res, next) {
+const userAuth: RequestParamHandler = (req, res, next) => {
   const { authorization } = req.headers
   if (!authorization) {
     return res.status(401).json({ message: 'Unauthorized' })
