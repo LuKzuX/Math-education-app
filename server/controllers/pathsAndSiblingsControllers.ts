@@ -1,4 +1,3 @@
-import { data } from 'react-router-dom'
 import { supabase } from '../db/connection'
 import { challenge_randomizer } from '../utils/challenge_randomizer'
 import { checkAndGrantAchievements } from '../utils/checkAndGrantAchievements'
