@@ -1,12 +1,12 @@
 import { supabase } from '../db/connection'
 import { challenge_randomizer } from '../utils/challenge_randomizer'
 import { checkAndGrantAchievements } from '../utils/checkAndGrantAchievements'
-import { RequestParamHandler } from 'express'
+import { RequestHandler } from 'express'
 const Parser = require('expr-eval').Parser
 const NodeCache = require('node-cache')
 const myCache = new NodeCache({ stdTTL: 0, checkperiod: 120 })
 
-export const createPath: RequestParamHandler = async (req, res, next) => {
+export const createPath: RequestHandler = async (req, res, next) => {
   const { name_url, title, description, icon, order } = req.body
   const { data, error } = await supabase
     .from('paths')
@@ -24,7 +24,7 @@ export const createPath: RequestParamHandler = async (req, res, next) => {
   res.send(data)
 }
 
-export const createTopic: RequestParamHandler = async (req, res, next) => {
+export const createTopic: RequestHandler = async (req, res, next) => {
   const { path_id } = req.params
   const { title, description, order } = req.body
   const { data, error } = await supabase
@@ -42,7 +42,7 @@ export const createTopic: RequestParamHandler = async (req, res, next) => {
   res.send(data)
 }
 
-export const getChallenges: RequestParamHandler = async (req, res, next) => {
+export const getChallenges: RequestHandler = async (req, res, next) => {
   const { topic_id } = req.params
   const { data, error } = await supabase
     .from('challenges')
@@ -51,7 +51,7 @@ export const getChallenges: RequestParamHandler = async (req, res, next) => {
   res.send(data)
 }
 
-export const getChallenge: RequestParamHandler = async (req, res, next) => {
+export const getChallenge: RequestHandler = async (req, res, next) => {
   const parser = new Parser()
   const { challenge_id } = req.params
   const { data, error } = await supabase
@@ -116,12 +116,12 @@ export const getChallenge: RequestParamHandler = async (req, res, next) => {
   })
 }
 
-export const getPaths: RequestParamHandler = async (req, res, next) => {
+export const getPaths: RequestHandler = async (req, res, next) => {
   const { data, error } = await supabase.from('paths').select('*')
   res.send(data)
 }
 
-export const getTopics: RequestParamHandler = async (req, res, next) => {
+export const getTopics: RequestHandler = async (req, res, next) => {
   const { path_id } = req.params
   const { data, error } = await supabase
     .from('topics')
@@ -130,7 +130,7 @@ export const getTopics: RequestParamHandler = async (req, res, next) => {
   res.send(data)
 }
 
-export const getChallengesByTopic: RequestParamHandler = async (req, res, next) => {
+export const getChallengesByTopic: RequestHandler = async (req, res, next) => {
   const { topic_id } = req.params
   const { data, error } = await supabase
     .from('challenges')
@@ -139,7 +139,7 @@ export const getChallengesByTopic: RequestParamHandler = async (req, res, next) 
   res.send(data)
 }
 
-export const submitAnswer: RequestParamHandler = async (req, res, next) => {
+export const submitAnswer: RequestHandler = async (req, res, next) => {
   const { challenge_id } = req.params
   if (!req.user) return res.status(401).json({ error: "Unauthorized" })
   const { id } = req.user
@@ -289,7 +289,7 @@ export const submitAnswer: RequestParamHandler = async (req, res, next) => {
     res.send(user)
   }
 }
-/*/admin */ export const createChallenge: RequestParamHandler = async (req, res, next) => {
+/*/admin */ export const createChallenge: RequestHandler = async (req, res, next) => {
   const { topic_id } = req.params
   const {
     title,
