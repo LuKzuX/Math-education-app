@@ -1,4 +1,4 @@
-import { supabase } from "../db/connection"
+import { supabase } from '../db/connection'
 
 export const checkAndGrantAchievements = async (user_id: string) => {
   const { data: user, error } = await supabase
@@ -28,17 +28,19 @@ export const checkAndGrantAchievements = async (user_id: string) => {
     level,
   }
 
+  if (!achievements) return []
   const achievementsConditions = achievements.filter((field) => field.condition)
   for (let i = 0; i < achievementsConditions.length; i++) {
     const achievement = achievementsConditions[i]
 
     const { field, value, operator } = achievement.condition
+    const statValue = stats[field as keyof typeof stats]
     if (
-      (operator === '>=' && stats[field] >= value) ||
-      (operator === '<=' && stats[field] <= value) ||
-      (operator === '>' && stats[field] > value) ||
-      (operator === '<' && stats[field] < value) ||
-      (operator === '==' && stats[field] === value)
+      (operator === '>=' && statValue >= value) ||
+      (operator === '<=' && statValue <= value) ||
+      (operator === '>' && statValue > value) ||
+      (operator === '<' && statValue < value) ||
+      (operator === '==' && statValue === value)
     ) {
       const { data: isAchievementEarned, error } = await supabase
         .from('user_achievements')

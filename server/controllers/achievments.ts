@@ -11,8 +11,8 @@ export const getAchievements: RequestParamHandler = async (req, res, next) => {
 }
 
 export const getUserAchievements: RequestParamHandler = async (req, res, next) => {
+  if (!req.user) return res.send("invalid user logged")
   const user_id = req.user.id
-
   const { data, error } = await supabase
     .from('user_achievements')
     .select('*, achievements(*)')

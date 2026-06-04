@@ -5,10 +5,11 @@ import dotenv from 'dotenv'
 dotenv.config()
 import crypto from 'crypto'
 import { Resend } from 'resend'
+import { RequestParamHandler } from 'express'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-export const getUser = async (req, res, next) => {
+export const getUser: RequestParamHandler = async (req, res, next) => {
   try {
     if (!req.user?.id) {
       return res.status(401).json({ message: 'Unauthorized' })
