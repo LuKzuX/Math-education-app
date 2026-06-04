@@ -2,11 +2,12 @@ import { data } from 'react-router-dom'
 import { supabase } from '../db/connection'
 import { challenge_randomizer } from '../utils/challenge_randomizer'
 import { checkAndGrantAchievements } from '../utils/checkAndGrantAchievements'
+import { RequestParamHandler } from 'express'
 const Parser = require('expr-eval').Parser
 const NodeCache = require('node-cache')
 const myCache = new NodeCache({ stdTTL: 0, checkperiod: 120 })
 
-export const createPath = async (req, res, next) => {
+export const createPath: RequestParamHandler = async (req, res, next) => {
   const { name_url, title, description, icon, order } = req.body
   const { data, error } = await supabase
     .from('paths')
@@ -24,7 +25,7 @@ export const createPath = async (req, res, next) => {
   res.send(data)
 }
 
-export const createTopic = async (req, res, next) => {
+export const createTopic: RequestParamHandler = async (req, res, next) => {
   const { path_id } = req.params
   const { title, description, order } = req.body
   const { data, error } = await supabase
@@ -42,7 +43,7 @@ export const createTopic = async (req, res, next) => {
   res.send(data)
 }
 
-export const getChallenges = async (req, res, next) => {
+export const getChallenges: RequestParamHandler = async (req, res, next) => {
   const { topic_id } = req.params
   const { data, error } = await supabase
     .from('challenges')
@@ -51,7 +52,7 @@ export const getChallenges = async (req, res, next) => {
   res.send(data)
 }
 
-export const getChallenge = async (req, res, next) => {
+export const getChallenge: RequestParamHandler = async (req, res, next) => {
   const parser = new Parser()
   const { challenge_id } = req.params
   const { data, error } = await supabase
@@ -72,12 +73,12 @@ export const getChallenge = async (req, res, next) => {
 
   const resolved_answer = data.correct_answer.replace(
     /\{(\d+)\}/g,
-    (_, i) => String(variables[Number(i)]) ?? `{${i}}`,
+    (_: string, i: string) => String(variables[Number(i)]) ?? `{${i}}`,
   )
 
   const evaluated_answer = resolved_answer
     .split(',')
-    .map((part) => parser.evaluate(part.trim()))
+    .map((part: string) => parser.evaluate(part.trim()))
 
   myCache.set(`challenge_${challenge_id}`, {
     challenge_id: data.challenge_id,
@@ -116,12 +117,12 @@ export const getChallenge = async (req, res, next) => {
   })
 }
 
-export const getPaths = async (req, res, next) => {
+export const getPaths: RequestParamHandler = async (req, res, next) => {
   const { data, error } = await supabase.from('paths').select('*')
   res.send(data)
 }
 
-export const getTopics = async (req, res, next) => {
+export const getTopics: RequestParamHandler = async (req, res, next) => {
   const { path_id } = req.params
   const { data, error } = await supabase
     .from('topics')
@@ -130,7 +131,7 @@ export const getTopics = async (req, res, next) => {
   res.send(data)
 }
 
-export const getChallengesByTopic = async (req, res, next) => {
+export const getChallengesByTopic: RequestParamHandler = async (req, res, next) => {
   const { topic_id } = req.params
   const { data, error } = await supabase
     .from('challenges')
@@ -139,8 +140,9 @@ export const getChallengesByTopic = async (req, res, next) => {
   res.send(data)
 }
 
-export const submitAnswer = async (req, res, next) => {
+export const submitAnswer: RequestParamHandler = async (req, res, next) => {
   const { challenge_id } = req.params
+  if (!req.user) return res.status(401).json({ error: "Unauthorized" })
   const { id } = req.user
   const { user_answer, hint_used } = req.body
   const challengeData = myCache.get(`challenge_${challenge_id}`)
@@ -215,26 +217,26 @@ export const submitAnswer = async (req, res, next) => {
       .maybeSingle()
 
     if (!attemptData) {
-      xp_earned = xp_medals[medal]
+     xp_earned = xp_medals[medal as keyof typeof xp_medals]
 
       await supabase.from('attempts').insert({
         user_id: id,
         challenge_id: challenge_id,
         elapsed_sec: attempt_time,
         medal_earned: medal,
-        xp_earned: xp_medals[medal],
+        xp_earned: xp_medals[medal as keyof typeof xp_medals],
       })
     } else {
       xp_earned =
-        xp_medals[medal] >= attemptData.xp_earned
-          ? xp_medals[medal] - attemptData.xp_earned
+        xp_medals[medal as keyof typeof xp_medals] >= attemptData.xp_earned
+          ? xp_medals[medal as keyof typeof xp_medals] - attemptData.xp_earned
           : 0
       const { data, error } = await supabase
         .from('attempts')
         .update({
           elapsed_sec: attempt_time,
           medal_earned: medal,
-          xp_earned: xp_medals[medal],
+          xp_earned: xp_medals[medal as keyof typeof xp_medals],
         })
         .eq('user_id', id)
         .eq('challenge_id', challenge_id)
@@ -288,7 +290,7 @@ export const submitAnswer = async (req, res, next) => {
     res.send(user)
   }
 }
-/*/admin */ export const createChallenge = async (req, res, next) => {
+/*/admin */ export const createChallenge: RequestParamHandler = async (req, res, next) => {
   const { topic_id } = req.params
   const {
     title,
@@ -321,7 +323,7 @@ export const submitAnswer = async (req, res, next) => {
   )
   const resolved_text = challenge_text.replace(
     /\{(\d+)\}/g,
-    (_, i) => variables[Number(i)] ?? `{${i}}`,
+    (_: string, i: string) => String(variables[Number(i)] ?? `{${i}}`)
   )
 
   const { data, error } = await supabase
