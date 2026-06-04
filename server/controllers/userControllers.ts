@@ -6,10 +6,11 @@ dotenv.config()
 import crypto from 'crypto'
 import { Resend } from 'resend'
 import { RequestParamHandler } from 'express'
+import { RequestHandler } from 'express'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-export const getUser: RequestParamHandler = async (req, res, next) => {
+export const getUser: RequestHandler = async (req, res, next) => {
   try {
     if (!req.user?.id) {
       return res.status(401).json({ message: 'Unauthorized' })
@@ -27,7 +28,7 @@ export const getUser: RequestParamHandler = async (req, res, next) => {
   }
 }
 
-export const getUserAttempts: RequestParamHandler = async (req, res, next) => {
+export const getUserAttempts: RequestHandler = async (req, res, next) => {
   if (!req.user) return res.status(401).json({ error: "Unauthorized" })
   const { id } = req.user
   const {data, error} = await supabase
@@ -37,11 +38,11 @@ export const getUserAttempts: RequestParamHandler = async (req, res, next) => {
   res.json(data)
 }
 
-export const getUserAchievments: RequestParamHandler = async (req, res, next ) => {
+export const getUserAchievments: RequestHandler = async (req, res, next ) => {
 
 }
 
-export const signup: RequestParamHandler = async (req, res, next) => {
+export const signup: RequestHandler = async (req, res, next) => {
   try {
     const { username, email, password } = req.body
 
@@ -88,7 +89,7 @@ export const signup: RequestParamHandler = async (req, res, next) => {
   }
 }
 
-export const verifyEmail: RequestParamHandler = async (req, res, next) => {
+export const verifyEmail: RequestHandler = async (req, res, next) => {
   const token = req.query.token as string
 
   const { data: pending } = await supabase
@@ -111,7 +112,7 @@ export const verifyEmail: RequestParamHandler = async (req, res, next) => {
   res.json({ message: 'Email verified. You can now log in.' })
 }
 
-export const signin: RequestParamHandler = async (req, res, next) => {
+export const signin: RequestHandler = async (req, res, next) => {
   try {
     const { email, password } = req.body
 
@@ -149,7 +150,7 @@ export const signin: RequestParamHandler = async (req, res, next) => {
   }
 }
 
-export const forgotPassword: RequestParamHandler = async (req, res, next) => {
+export const forgotPassword: RequestHandler = async (req, res, next) => {
   try {
     const { email } = req.body
     const token = crypto.randomBytes(32).toString('hex')
@@ -186,7 +187,7 @@ export const forgotPassword: RequestParamHandler = async (req, res, next) => {
   }
 }
 
-export const resetPassword: RequestParamHandler = async (req, res, next) => {
+export const resetPassword: RequestHandler = async (req, res, next) => {
   const token = req.query.token as string
   const { newPassword } = req.body
 
