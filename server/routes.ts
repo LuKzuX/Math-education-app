@@ -2,7 +2,7 @@ import { Router } from "express";
 export const router = Router()
 import { userAuth } from "./middlewares/userAuth";
 import { signup, signin, verifyEmail, forgotPassword, resetPassword, getUser, getUserAttempts } from "./controllers/userControllers";
-import {createPath, createTopic, getPaths, getTopics, getChallenges, getChallenge, submitAnswer, createChallenge} from './controllers/pathsAndSiblingsControllers'
+import { createPath, createTopic, getPaths, getTopics, getTopicsByPath, getChallengesByTopic, getChallenges, getChallenge, submitAnswer, createChallenge } from './controllers/pathsAndSiblingsControllers'
 import { getAchievements, getUserAchievements } from "./controllers/achievments";
 
 router.get('/user', userAuth, getUser)

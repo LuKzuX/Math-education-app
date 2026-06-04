@@ -139,6 +139,15 @@ export const getChallengesByTopic: RequestHandler = async (req, res, next) => {
   res.send(data)
 }
 
+export const getTopicsByPath: RequestHandler = async (req, res, next) => {
+  const { path_id } = req.params
+  const { data, error } = await supabase
+    .from('topics')
+    .select('*')
+    .eq('path_id', path_id)
+  res.send(data)
+}
+
 export const submitAnswer: RequestHandler = async (req, res, next) => {
   const { challenge_id } = req.params
   if (!req.user) return res.status(401).json({ error: "Unauthorized" })
