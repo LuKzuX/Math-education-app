@@ -27,7 +27,8 @@ export const getUser: RequestParamHandler = async (req, res, next) => {
   }
 }
 
-export const getUserAttempts = async (req, res, next) => {
+export const getUserAttempts: RequestParamHandler = async (req, res, next) => {
+  if (!req.user) return res.status(401).json({ error: "Unauthorized" })
   const { id } = req.user
   const {data, error} = await supabase
   .from("attempts")
@@ -36,11 +37,11 @@ export const getUserAttempts = async (req, res, next) => {
   res.json(data)
 }
 
-export const getUserAchievments = async (req, res, next ) => {
+export const getUserAchievments: RequestParamHandler = async (req, res, next ) => {
 
 }
 
-export const signup = async (req, res, next) => {
+export const signup: RequestParamHandler = async (req, res, next) => {
   try {
     const { username, email, password } = req.body
 
@@ -87,7 +88,7 @@ export const signup = async (req, res, next) => {
   }
 }
 
-export const verifyEmail = async (req, res, next) => {
+export const verifyEmail: RequestParamHandler = async (req, res, next) => {
   const token = req.query.token as string
 
   const { data: pending } = await supabase
@@ -110,7 +111,7 @@ export const verifyEmail = async (req, res, next) => {
   res.json({ message: 'Email verified. You can now log in.' })
 }
 
-export const signin = async (req, res, next) => {
+export const signin: RequestParamHandler = async (req, res, next) => {
   try {
     const { email, password } = req.body
 
@@ -148,7 +149,7 @@ export const signin = async (req, res, next) => {
   }
 }
 
-export const forgotPassword = async (req, res, next) => {
+export const forgotPassword: RequestParamHandler = async (req, res, next) => {
   try {
     const { email } = req.body
     const token = crypto.randomBytes(32).toString('hex')
@@ -185,7 +186,7 @@ export const forgotPassword = async (req, res, next) => {
   }
 }
 
-export const resetPassword = async (req, res, next) => {
+export const resetPassword: RequestParamHandler = async (req, res, next) => {
   const token = req.query.token as string
   const { newPassword } = req.body
 
