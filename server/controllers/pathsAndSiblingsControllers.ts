@@ -1,4 +1,5 @@
 import { supabase } from '../db/connection'
+import { AuthRequest } from '../types/AuthRequest'
 import { challenge_randomizer } from '../utils/challenge_randomizer'
 import { checkAndGrantAchievements } from '../utils/checkAndGrantAchievements'
 import { RequestHandler } from 'express'
@@ -70,30 +71,51 @@ export const getChallenge: RequestHandler = async (req, res, next) => {
     () => String(variables[i++] ?? 0), // replaces each with the next variable in order
   )
 
-  const resolved_answer = data.correct_answer.replace(
-    /\{(\d+)\}/g,
-    (_: string, i: string) => String(variables[Number(i)]) ?? `{${i}}`,
-  )
+  if (data.variables_range.length > 0) {
+    const resolved_answer = data.correct_answer.replace(
+      /\{(\d+)\}/g,
+      (_: string, i: string) => String(variables[Number(i)]) ?? `{${i}}`,
+    )
 
-  const evaluated_answer = resolved_answer
-    .split(',')
-    .map((part: string) => parser.evaluate(part.trim()))
+    const evaluated_answer = resolved_answer
+      .split(',')
+      .map((part: string) => parser.evaluate(part.trim()))
 
-  myCache.set(`challenge_${challenge_id}`, {
-    challenge_id: data.challenge_id,
-    text: question_text,
-    variables: variables,
-    alternatives: alternatives,
-    correct_answer: evaluated_answer,
-    title: data.title,
-    difficulty: data.difficulty,
-    gold_time_sec: data.gold_time_sec,
-    silver_time_sec: data.silver_time_sec,
-    xp_gold: data.xp_gold,
-    xp_silver: data.xp_silver,
-    xp_bronze: data.xp_bronze,
-    hint_text: data.hint_text,
-  })
+    myCache.set(`challenge_${challenge_id}`, {
+      challenge_id: data.challenge_id,
+      text: question_text,
+      variables: variables,
+      alternatives: alternatives,
+      correct_answer: evaluated_answer,
+      title: data.title,
+      difficulty: data.difficulty,
+      gold_time_sec: data.gold_time_sec,
+      silver_time_sec: data.silver_time_sec,
+      xp_gold: data.xp_gold,
+      xp_silver: data.xp_silver,
+      xp_bronze: data.xp_bronze,
+      hint_text: data.hint_text,
+    })
+  } else {
+    const evaluated_answer = data.correct_answer
+      .split(',')
+      .map((part: string) => part.trim())
+    myCache.set(`challenge_${challenge_id}`, {
+      challenge_id: data.challenge_id,
+      text: question_text,
+      variables: variables,
+      alternatives: alternatives,
+      correct_answer: evaluated_answer,
+      title: data.title,
+      difficulty: data.difficulty,
+      gold_time_sec: data.gold_time_sec,
+      silver_time_sec: data.silver_time_sec,
+      xp_gold: data.xp_gold,
+      xp_silver: data.xp_silver,
+      xp_bronze: data.xp_bronze,
+      hint_text: data.hint_text,
+    })
+  }
 
   myCache.set(`attempt_${challenge_id}`, {
     started_at: Date.now(),
@@ -148,9 +170,13 @@ export const getTopicsByPath: RequestHandler = async (req, res, next) => {
   res.send(data)
 }
 
-export const submitAnswer: RequestHandler = async (req, res, next) => {
+export const submitAnswer: RequestHandler = async (
+  req: AuthRequest,
+  res,
+  next,
+) => {
   const { challenge_id } = req.params
-  if (!req.user) return res.status(401).json({ error: "Unauthorized" })
+  if (!req.user) return res.status(401).json({ error: 'Unauthorized' })
   const { id } = req.user
   const { user_answer, hint_used } = req.body
   const challengeData = myCache.get(`challenge_${challenge_id}`)
@@ -225,7 +251,7 @@ export const submitAnswer: RequestHandler = async (req, res, next) => {
       .maybeSingle()
 
     if (!attemptData) {
-     xp_earned = xp_medals[medal as keyof typeof xp_medals]
+      xp_earned = xp_medals[medal as keyof typeof xp_medals]
 
       await supabase.from('attempts').insert({
         user_id: id,
@@ -298,7 +324,11 @@ export const submitAnswer: RequestHandler = async (req, res, next) => {
     res.send(user)
   }
 }
-/*/admin */ export const createChallenge: RequestHandler = async (req, res, next) => {
+/*/admin */ export const createChallenge: RequestHandler = async (
+  req,
+  res,
+  next,
+) => {
   const { topic_id } = req.params
   const {
     title,
@@ -331,7 +361,7 @@ export const submitAnswer: RequestHandler = async (req, res, next) => {
   )
   const resolved_text = challenge_text.replace(
     /\{(\d+)\}/g,
-    (_: string, i: string) => String(variables[Number(i)] ?? `{${i}}`)
+    (_: string, i: string) => String(variables[Number(i)] ?? `{${i}}`),
   )
 
   const { data, error } = await supabase

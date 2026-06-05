@@ -5,12 +5,12 @@ import dotenv from 'dotenv'
 dotenv.config()
 import crypto from 'crypto'
 import { Resend } from 'resend'
-import { RequestParamHandler } from 'express'
 import { RequestHandler } from 'express'
+import { AuthRequest } from '../types/AuthRequest'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-export const getUser: RequestHandler = async (req, res, next) => {
+export const getUser: RequestHandler = async (req: AuthRequest, res, next) => {
   try {
     if (!req.user?.id) {
       return res.status(401).json({ message: 'Unauthorized' })
@@ -28,7 +28,11 @@ export const getUser: RequestHandler = async (req, res, next) => {
   }
 }
 
-export const getUserAttempts: RequestHandler = async (req, res, next) => {
+export const updateUser: RequestHandler = async (req, res, next) => {
+  
+}
+
+export const getUserAttempts: RequestHandler = async (req: AuthRequest, res, next) => {
   if (!req.user) return res.status(401).json({ error: "Unauthorized" })
   const { id } = req.user
   const {data, error} = await supabase
