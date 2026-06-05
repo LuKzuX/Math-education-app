@@ -26,6 +26,7 @@ export const checkAndGrantAchievements = async (user_id: string) => {
     totalCorrect,
     streak,
     level,
+    attempts,
   }
 
   if (!achievements) return []
@@ -34,26 +35,63 @@ export const checkAndGrantAchievements = async (user_id: string) => {
     const achievement = achievementsConditions[i]
 
     const { field, value, operator } = achievement.condition
+
     const statValue = stats[field as keyof typeof stats]
-    if (
-      (operator === '>=' && statValue >= value) ||
-      (operator === '<=' && statValue <= value) ||
-      (operator === '>' && statValue > value) ||
-      (operator === '<' && statValue < value) ||
-      (operator === '==' && statValue === value)
-    ) {
-      const { data: isAchievementEarned, error } = await supabase
-        .from('user_achievements')
+    if (value?.topic_id) {
+      // topic completion
+      const { data: challengesByTopic } = await supabase
+        .from('challenges')
         .select('*')
-        .eq('achievement_id', achievement.achievement_id)
+        .eq('topic_id', value.topic_id)
+        
+
+      if (!challengesByTopic) continue
+
+      const challengeIds = challengesByTopic.map((c) => c.challenge_id)
+
+      const { data: topicAttempts } = await supabase
+        .from('attempts')
+        .select('*')
+        .eq('challenge_id', challengeIds)
         .eq('user_id', user_id)
 
-      if (!isAchievementEarned) {
-        await supabase.from('user_achievements').insert({
-          user_id,
-          achievement_id: achievement.achievement_id,
-          earned_at: new Date().toISOString(),
-        })
+      if ((topicAttempts?.length ?? 0) >= challengesByTopic.length) {
+        const { data: isAchievementEarned } = await supabase
+          .from('user_achievements')
+          .select('*')
+          .eq('achievement_id', achievement.achievement_id)
+          .eq('user_id', user_id)
+
+        if (!isAchievementEarned?.length) {
+          await supabase.from('user_achievements').insert({
+            user_id,
+            achievement_id: achievement.achievement_id,
+            earned_at: new Date().toISOString(),
+          })
+        }
+      }
+    } else {
+      // scalar comparison
+      if (
+        (operator === '>=' && statValue >= value) ||
+        (operator === '<=' && statValue <= value) ||
+        (operator === '>' && statValue > value) ||
+        (operator === '<' && statValue < value) ||
+        (operator === '==' && statValue === value)
+      ) {
+        const { data: isAchievementEarned } = await supabase
+          .from('user_achievements')
+          .select('*')
+          .eq('achievement_id', achievement.achievement_id)
+          .eq('user_id', user_id)
+
+        if (!isAchievementEarned?.length) {
+          await supabase.from('user_achievements').insert({
+            user_id,
+            achievement_id: achievement.achievement_id,
+            earned_at: new Date().toISOString(),
+          })
+        }
       }
     }
   }

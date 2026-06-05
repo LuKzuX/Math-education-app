@@ -1,4 +1,3 @@
-import { RequestParamHandler } from 'express'
 import jwt, { JwtPayload } from 'jsonwebtoken'
 import { RequestHandler } from 'express'
 
@@ -16,7 +15,7 @@ export const userAuth: RequestHandler = (req, res, next) => {
       process.env.JWT_SECRET || 'fallback-jwt-secret-key-for-development',
     ) as JwtPayload
 
-    req.user = {
+    (req as any).user = {
       id: verified.id,
       email: verified.email,
     }

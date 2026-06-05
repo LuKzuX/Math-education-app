@@ -1,5 +1,6 @@
 import { RequestHandler } from 'express'
 import { supabase } from '../db/connection'
+import { AuthRequest } from '../types/AuthRequest'
 
 export const getAchievements: RequestHandler = async (req, res, next) => {
   const { data, error } = await supabase
@@ -10,7 +11,7 @@ export const getAchievements: RequestHandler = async (req, res, next) => {
   return res.status(200).json(data)
 }
 
-export const getUserAchievements: RequestHandler = async (req, res, next) => {
+export const getUserAchievements: RequestHandler = async (req: AuthRequest, res, next) => {
   if (!req.user) return res.send("invalid user logged")
   const user_id = req.user.id
   const { data, error } = await supabase
