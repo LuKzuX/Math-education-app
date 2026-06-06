@@ -30,7 +30,7 @@ router.get('/topics/:topic_id/challenges', getChallenges)
 router.post('/topics/:topic_id/challenges', createChallenge)
 
 // Challenge
-router.get('/challenges/:challenge_id', getChallenge)
+router.get('/challenges/:challenge_id', userAuth, getChallenge)
 router.post('/challenges/:challenge_id/submit', userAuth, submitAnswer)
 
 //Achievements
