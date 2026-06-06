@@ -26,12 +26,13 @@ router.get('/paths/:pathId/topics', getTopics)
 router.post('/paths/:pathId/topics', createTopic)
 
 // Challenges
-router.get('/topics/:topicId/challenges', getChallenges)
-router.post('/topics/:topicId/challenges', createChallenge)
+router.get('/topics/:topic_id/challenges', getChallenges)
+router.post('/topics/:topic_id/challenges', createChallenge)
 
 // Challenge
-router.get('/challenges/:challengeId', getChallenge)
-router.post('/challenges/:challengeId/submit', userAuth, submitAnswer)
+router.get('/challenges/:challenge_id', getChallenge)
+router.post('/challenges/:challenge_id/submit', userAuth, submitAnswer)
 
+//Achievements
 router.get('/achievements', getAchievements)
 router.get('/user/achievements', userAuth, getUserAchievements)
