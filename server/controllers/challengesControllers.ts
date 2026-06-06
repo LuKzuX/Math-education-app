@@ -1,6 +1,6 @@
 import { supabase } from '../db/connection'
 import { AuthRequest } from '../types/AuthRequest'
-import { challenge_randomizer } from '../utils/challenge_randomizer'
+import { challenge_randomizer, VarRange } from '../utils/challenge_randomizer'
 import { checkAndGrantAchievements } from '../utils/checkAndGrantAchievements'
 import { RequestHandler } from 'express'
 const Parser = require('expr-eval').Parser
@@ -35,41 +35,75 @@ export const getChallenge: RequestHandler = async (req, res, next) => {
     () => String(variables[i++] ?? 0), // replaces each with the next variable in order
   )
 
+  const hasValues = data.variables_range.every(
+    (item: VarRange) => 'values' in item,
+  )
+
+  let answer = []
   if (data.variables_range.length > 0) {
-    const resolved_answer = data.correct_answer.replace(
+    answer = data.correct_answer.replace(
       /\{(\d+)\}/g,
       (_: string, i: string) => String(variables[Number(i)]) ?? `{${i}}`,
     )
+    answer = hasValues
+      ? answer.split(',').map((part: string) => part.trim())
+      : answer.split(',').map((part: string) => parser.evaluate(part.trim()))
+    if (data.variables_range.length > 0) {
+      const resolved_answer = data.correct_answer.replace(
+        /\{(\d+)\}/g,
+        (_: string, i: string) => String(variables[Number(i)]) ?? `{${i}}`,
+      )
 
-    const evaluated_answer = resolved_answer
-      .split(',')
-      .map((part: string) => parser.evaluate(part.trim()))
+      const evaluated_answer = resolved_answer
+        .split(',')
+        .map((part: string) => parser.evaluate(part.trim()))
 
-    myCache.set(`challenge_${challenge_id}`, {
-      challenge_id: data.challenge_id,
-      text: question_text,
-      variables: variables,
-      alternatives: alternatives,
-      correct_answer: evaluated_answer,
-      title: data.title,
-      difficulty: data.difficulty,
-      gold_time_sec: data.gold_time_sec,
-      silver_time_sec: data.silver_time_sec,
-      xp_gold: data.xp_gold,
-      xp_silver: data.xp_silver,
-      xp_bronze: data.xp_bronze,
-      hint_text: data.hint_text,
+      myCache.set(`challenge_${challenge_id}`, {
+        challenge_id: data.challenge_id,
+        text: question_text,
+        variables: variables,
+        alternatives: alternatives,
+        correct_answer: evaluated_answer,
+        title: data.title,
+        difficulty: data.difficulty,
+        gold_time_sec: data.gold_time_sec,
+        silver_time_sec: data.silver_time_sec,
+        xp_gold: data.xp_gold,
+        xp_silver: data.xp_silver,
+        xp_bronze: data.xp_bronze,
+        hint_text: data.hint_text,
+      })
+    } else {
+      const evaluated_answer = data.correct_answer
+        .split(',')
+        .map((part: string) => part.trim())
+      myCache.set(`challenge_${challenge_id}`, {
+        challenge_id: data.challenge_id,
+        text: question_text,
+        variables: variables,
+        alternatives: alternatives,
+        correct_answer: evaluated_answer,
+        title: data.title,
+        difficulty: data.difficulty,
+        gold_time_sec: data.gold_time_sec,
+        silver_time_sec: data.silver_time_sec,
+        xp_gold: data.xp_gold,
+        xp_silver: data.xp_silver,
+        xp_bronze: data.xp_bronze,
+        hint_text: data.hint_text,
+      })
+    }
+
+    myCache.set(`attempt_${challenge_id}`, {
+      started_at: Date.now(),
+      sec_elapsed: 0,
     })
-  } else {
-    const evaluated_answer = data.correct_answer
-      .split(',')
-      .map((part: string) => part.trim())
-    myCache.set(`challenge_${challenge_id}`, {
+
+    res.json({
       challenge_id: data.challenge_id,
       text: question_text,
       variables: variables,
       alternatives: alternatives,
-      correct_answer: evaluated_answer,
       title: data.title,
       difficulty: data.difficulty,
       gold_time_sec: data.gold_time_sec,
@@ -80,28 +114,7 @@ export const getChallenge: RequestHandler = async (req, res, next) => {
       hint_text: data.hint_text,
     })
   }
-
-  myCache.set(`attempt_${challenge_id}`, {
-    started_at: Date.now(),
-    sec_elapsed: 0,
-  })
-
-  res.json({
-    challenge_id: data.challenge_id,
-    text: question_text,
-    variables: variables,
-    alternatives: alternatives,
-    title: data.title,
-    difficulty: data.difficulty,
-    gold_time_sec: data.gold_time_sec,
-    silver_time_sec: data.silver_time_sec,
-    xp_gold: data.xp_gold,
-    xp_silver: data.xp_silver,
-    xp_bronze: data.xp_bronze,
-    hint_text: data.hint_text,
-  })
 }
-
 export const submitAnswer: RequestHandler = async (
   req: AuthRequest,
   res,
@@ -238,7 +251,7 @@ export const submitAnswer: RequestHandler = async (
       .eq('user_id', id)
       .eq('challenge_id', challenge_id)
 
-    lostLives = data ? (lostLives = 0) : (lostLives = 1)
+    lostLives = data && data.length > 0 ? 0 : 1
 
     const { data: user } = await supabase
       .from('users')
@@ -256,11 +269,8 @@ export const submitAnswer: RequestHandler = async (
     res.send(user)
   }
 }
-/*/admin */ export const createChallenge: RequestHandler = async (
-  req,
-  res,
-  next,
-) => {
+
+export const createChallenge: RequestHandler = async (req, res, next) => {
   const { topic_id } = req.params
   const {
     title,
