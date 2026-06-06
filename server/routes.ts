@@ -22,8 +22,8 @@ router.get('/paths', getPaths)
 router.post('/paths', createPath)
 
 // Topics
-router.get('/paths/:pathId/topics', getTopics)
-router.post('/paths/:pathId/topics', createTopic)
+router.get('/paths/:path_id/topics', getTopics)
+router.post('/paths/:path_id/topics', createTopic)
 
 // Challenges
 router.get('/topics/:topic_id/challenges', getChallenges)
