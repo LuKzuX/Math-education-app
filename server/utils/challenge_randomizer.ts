@@ -17,7 +17,7 @@ export const challenge_randomizer = (
       variables.push(typeof picked === 'boolean' ? (picked ? 1 : 0) : picked)
     } else {
       const { min, max, even } = item
-      let random: number = Math.floor(Math.random() * (max - min)) + min
+      let random: number = Math.floor(Math.random() * (max - min + 1)) + min
 
       if (even) {
         if (random % 2 !== 0) {
