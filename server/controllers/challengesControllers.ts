@@ -7,42 +7,6 @@ const Parser = require('expr-eval').Parser
 const NodeCache = require('node-cache')
 const myCache = new NodeCache({ stdTTL: 0, checkperiod: 120 })
 
-export const createPath: RequestHandler = async (req, res, next) => {
-  const { name_url, title, description, icon, order } = req.body
-  const { data, error } = await supabase
-    .from('paths')
-    .insert({
-      name_url,
-      title,
-      description,
-      icon,
-      order,
-    })
-    .select()
-    .single()
-
-  if (error) return res.status(409).json(error)
-  res.send(data)
-}
-
-export const createTopic: RequestHandler = async (req, res, next) => {
-  const { path_id } = req.params
-  const { title, description, order } = req.body
-  const { data, error } = await supabase
-    .from('topics')
-    .insert({
-      path_id,
-      title,
-      description,
-      order,
-    })
-    .select()
-    .single()
-
-  if (error) return res.status(409).json(error)
-  res.send(data)
-}
-
 export const getChallenges: RequestHandler = async (req, res, next) => {
   const { topic_id } = req.params
   const { data, error } = await supabase
@@ -136,38 +100,6 @@ export const getChallenge: RequestHandler = async (req, res, next) => {
     xp_bronze: data.xp_bronze,
     hint_text: data.hint_text,
   })
-}
-
-export const getPaths: RequestHandler = async (req, res, next) => {
-  const { data, error } = await supabase.from('paths').select('*')
-  res.send(data)
-}
-
-export const getTopics: RequestHandler = async (req, res, next) => {
-  const { path_id } = req.params
-  const { data, error } = await supabase
-    .from('topics')
-    .select('*')
-    .eq('topic_id', path_id)
-  res.send(data)
-}
-
-export const getChallengesByTopic: RequestHandler = async (req, res, next) => {
-  const { topic_id } = req.params
-  const { data, error } = await supabase
-    .from('challenges')
-    .select('*')
-    .eq('topic_id', topic_id)
-  res.send(data)
-}
-
-export const getTopicsByPath: RequestHandler = async (req, res, next) => {
-  const { path_id } = req.params
-  const { data, error } = await supabase
-    .from('topics')
-    .select('*')
-    .eq('path_id', path_id)
-  res.send(data)
 }
 
 export const submitAnswer: RequestHandler = async (
