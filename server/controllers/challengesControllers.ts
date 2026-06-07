@@ -1,11 +1,9 @@
 import { supabase } from '../db/connection'
 import { AuthRequest } from '../types/AuthRequest'
-import { challenge_randomizer, VarRange } from '../utils/challenge_randomizer'
+import { challenge_randomizer } from '../utils/challenge_randomizer'
 import { checkAndGrantAchievements } from '../utils/checkAndGrantAchievements'
 import { RequestHandler } from 'express'
 const Parser = require('expr-eval').Parser
-const NodeCache = require('node-cache')
-const myCache = new NodeCache({ stdTTL: 0, checkperiod: 120 })
 
 export const getChallenges: RequestHandler = async (req, res, next) => {
   const { topic_id } = req.params
