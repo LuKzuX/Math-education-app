@@ -22,3 +22,10 @@ export const getUserAchievements: RequestHandler = async (req: AuthRequest, res,
   if (error) return res.status(500).json({ error: error.message })
   return res.status(200).json(data)
 }
+
+export const createAchievement: RequestHandler = async (req: AuthRequest, res, next) => {
+  if (!req.user) return res.send("invalid user logged")
+  const user_id = req.user.id
+ 
+}
+
