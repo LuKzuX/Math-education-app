@@ -225,3 +225,7 @@ export const resetPassword: RequestHandler = async (req, res, next) => {
     res.json({ message })
   }
 }
+
+export const logout: RequestHandler = async (req, res, next) => {
+  res.status(200).json({ message: 'Logged out successfully' })
+}
