@@ -20,6 +20,7 @@
     "expr-eval": "^2.0.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "multer": "^2.1.1",
     "node-cache": "^5.1.2",
     "nodemon": "^3.1.14",
     "resend": "^6.12.3"
@@ -29,6 +30,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.1.0",
     "@types/node": "^25.9.0",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3"
