@@ -6,5 +6,9 @@ import { RequestHandler } from 'express'
 const Parser = require('expr-eval').Parser
 
 export const getLeaderboard: RequestHandler = async (req, res, next) => {
- 
+    const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .order("total_xp")
+    res.json(data)
 }

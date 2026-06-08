@@ -7,7 +7,7 @@ import { getTopics, createTopic } from './controllers/topicsControllers'
 import { getChallenges, getChallenge, createChallenge, submitAnswer } from './controllers/challengesControllers'
 import { getAchievements, getUserAchievements, createAchievement } from "./controllers/achievments";
 import { getLeaderboard } from "./controllers/leaderboard";
-
+import { upload } from "./middlewares/multer";
 // User
 router.get('/user', userAuth, getUser)
 router.post('/signup', signup)
@@ -39,7 +39,7 @@ router.post('/challenges/:challenge_id/submit', userAuth, submitAnswer)
 //Achievements
 router.get('/achievements', getAchievements)
 router.get('/user/achievements', userAuth, getUserAchievements)
-router.post('/achievements', userAuth, createAchievement)
+router.post('/achievements',   upload.single('achievement_icon'), userAuth, createAchievement)
 
 // Leaderboard
 router.get('/leaderboard', getLeaderboard)
