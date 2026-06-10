@@ -3,6 +3,7 @@ import { AuthRequest } from '../types/AuthRequest'
 import { challenge_randomizer } from '../utils/challenge_randomizer'
 import { checkAndGrantAchievements } from '../utils/checkAndGrantAchievements'
 import { RequestHandler } from 'express'
+import { calculateUserLevel } from "../utils/calculateUserLevel";
 const Parser = require('expr-eval').Parser
 
 export const getChallenges: RequestHandler = async (req, res, next) => {
@@ -210,6 +211,7 @@ export const submitAnswer: RequestHandler = async (
           xp_medals[medal as keyof typeof xp_medals] >= attemptData.xp_earned
             ? xp_medals[medal as keyof typeof xp_medals] - attemptData.xp_earned
             : 0
+
         const { data, error } = await supabase
           .from('attempts')
           .update({
@@ -230,11 +232,14 @@ export const submitAnswer: RequestHandler = async (
         .eq('id', id)
         .single()
 
+      const userLevel = calculateUserLevel(user.total_xp + xp_earned)
+      
       const { data: userData } = await supabase
         .from('users')
         .update({
           total_xp: user.total_xp + xp_earned,
           streak: (user.streak += streak),
+          user_level: userLevel,
         })
         .eq('id', id)
         .select()
@@ -302,7 +307,7 @@ export const createChallenge: RequestHandler = async (req, res, next) => {
     variables_range,
     alternatives_options,
   )
- 
+
 
   const { data, error } = await supabase
     .from('challenges')
