@@ -28,69 +28,100 @@ export const getUser: RequestHandler = async (req: AuthRequest, res, next) => {
   }
 }
 
-export const updateUser: RequestHandler = async (req, res, next) => {
-  const {username, email, profile_picture} = req.body
-}
-
-export const getUserAttempts: RequestHandler = async (req: AuthRequest, res, next) => {
-  if (!req.user) return res.status(401).json({ error: "Unauthorized" })
-  const { id } = req.user
-  const {data, error} = await supabase
-  .from("attempts")
-  .select("*")
-  .eq('user_id', id)
-  res.json(data)
-}
-
-export const getUserAchievments: RequestHandler = async (req, res, next ) => {
-
-}
-
-export const signup: RequestHandler = async (req, res, next) => {
-  try {
-    const { username, email, password } = req.body
-
+export const updateUser: RequestHandler = async (req: AuthRequest, res, next) => {
+  const user_id = req.user?.id
+  if (!user_id) return res.status(401).json({ message: 'Unauthorized' });
+  const { username, email, profile_picture } = req.body
+  if (email) {
     const { data: emailFound, error } = await supabase
       .from('users')
       .select('*')
       .eq('email', email)
-
+      .neq('id', user_id)
     if ((emailFound?.length ?? 0) >= 1) {
       return res.status(409).json({ message: 'This email already exists' })
     }
-    const hashedPassword = await bcrypt.hash(password, 10)
+
+
+
     const token = crypto.randomBytes(32).toString('hex')
-    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000)
-
-    const { data: profile, error: profileError } = await supabase
-      .from('pending_users')
-      .insert({
-        username,
-        email,
-        password: hashedPassword,
-        token,
-        expires_at: expires,
-      })
-
-    if (profileError) {
-      return res.status(500).json({ message: profileError })
-    }
-
+    const expires = new Date(Date.now() + 1000 * 60 * 60);
     const verifyLink = `mathly/verify-email?token=${token}`
+
+    await supabase.from('password_reset_tokens').insert({
+      user_id: user_id,
+      token,
+      expires_at: expires.toISOString(),
+    });
+
     await resend.emails.send({
       from: 'App <onboarding@resend.dev>',
       to: email,
       subject: 'Verify your email',
       html: `<p>Click <a href="${verifyLink}">here</a> to verify your account.</p>`,
     })
-
-    res
-      .status(200)
-      .json({ message: 'Check your email to confirm your account.', token })
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Internal server error'
-    res.status(500).json({ message })
   }
+
+  
+
+  res.status(200).json({ message: 'User updated successfully' });
+
+}
+
+export const getUserAttempts: RequestHandler = async (req: AuthRequest, res, next) => {
+  if (!req.user) return res.status(401).json({ error: "Unauthorized" })
+  const { id } = req.user
+  const { data, error } = await supabase
+    .from("attempts")
+    .select("*")
+    .eq('user_id', id)
+  res.json(data)
+}
+
+export const getUserAchievments: RequestHandler = async (req, res, next) => {
+
+}
+
+export const signup: RequestHandler = async (req, res, next) => {
+  const { username, email, password } = req.body
+
+  const { data: emailFound, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('email', email)
+
+  if ((emailFound?.length ?? 0) >= 1) {
+    return res.status(409).json({ message: 'This email already exists' })
+  }
+  const hashedPassword = await bcrypt.hash(password, 10)
+  const token = crypto.randomBytes(32).toString('hex')
+  const expires = new Date(Date.now() + 24 * 60 * 60 * 1000)
+
+  const { data: profile, error: profileError } = await supabase
+    .from('pending_users')
+    .insert({
+      username,
+      email,
+      password: hashedPassword,
+      token,
+      expires_at: expires,
+    })
+
+  if (profileError) {
+    return res.status(500).json({ message: profileError })
+  }
+
+  const verifyLink = `mathly/verify-email?token=${token}`
+  await resend.emails.send({
+    from: 'App <onboarding@resend.dev>',
+    to: email,
+    subject: 'Verify your email',
+    html: `<p>Click <a href="${verifyLink}">here</a> to verify your account.</p>`,
+  })
+
+  res
+    .status(200)
+    .json({ message: 'Check your email to confirm your account.', token })
 }
 
 export const verifyEmail: RequestHandler = async (req, res, next) => {
