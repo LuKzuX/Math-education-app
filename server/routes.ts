@@ -39,7 +39,7 @@ router.post('/challenges/:challenge_id/submit', userAuth, submitAnswer)
 //Achievements
 router.get('/achievements', getAchievements)
 router.get('/user/achievements', userAuth, getUserAchievements)
-router.post('/achievements',   upload.single('achievement_icon'), userAuth, createAchievement)
+router.post('/achievements', upload.single('achievement_icon'), userAuth, createAchievement)
 
 // Leaderboard
 router.get('/leaderboard', getLeaderboard)
