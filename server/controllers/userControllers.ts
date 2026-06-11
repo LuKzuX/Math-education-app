@@ -29,7 +29,7 @@ export const getUser: RequestHandler = async (req: AuthRequest, res, next) => {
 }
 
 export const updateUser: RequestHandler = async (req, res, next) => {
-  
+  const {username, email, profile_picture} = req.body
 }
 
 export const getUserAttempts: RequestHandler = async (req: AuthRequest, res, next) => {
