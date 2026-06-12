@@ -60,9 +60,21 @@ export const updateUser: RequestHandler = async (req: AuthRequest, res, next) =>
       subject: 'Verify your email',
       html: `<p>Click <a href="${verifyLink}">here</a> to verify your account.</p>`,
     })
+
+    const updates = Object.fromEntries(
+      Object.entries({ username, avatar_url: profile_picture }).filter(([_, v]) => v !== undefined)
+    );
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ message: 'Nothing to update' });
+    }
+
+    const { error: err } = await supabase.from('users').update(updates).eq('id', user_id);
+    if (err) return next(err);
+
   }
 
-  
+
 
   res.status(200).json({ message: 'User updated successfully' });
 
