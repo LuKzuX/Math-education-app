@@ -8,6 +8,7 @@ import { getChallenges, getChallenge, createChallenge, submitAnswer } from './co
 import { getAchievements, getUserAchievements, createAchievement } from "./controllers/achievments";
 import { getLeaderboard } from "./controllers/leaderboard";
 import { upload } from "./middlewares/multer";
+
 // User
 router.get('/user', userAuth, getUser)
 router.post('/signup', signup)
