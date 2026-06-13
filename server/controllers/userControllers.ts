@@ -90,8 +90,20 @@ export const getUserAttempts: RequestHandler = async (req: AuthRequest, res, nex
   res.json(data)
 }
 
-export const getUserAchievments: RequestHandler = async (req, res, next) => {
+export const getUserAchievments: RequestHandler = async (req: AuthRequest, res, next) => {
 
+  const user_id = req.user?.id
+  if (!user_id) return res.status(401).json({ message: 'Unauthorized' });
+  const { data, error } = await supabase
+    .from("users_achievements")
+    .select("achievement_id")
+    .eq("user_id", user_id)
+
+  const { data: achievements, error: err } = await supabase
+    .from("achievements")
+    .select("*")
+    .eq("achievement_id", data)
+  res.send(achievements)
 }
 
 export const signup: RequestHandler = async (req, res, next) => {
