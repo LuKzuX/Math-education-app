@@ -18,6 +18,7 @@ export const userAuth: RequestHandler = (req, res, next) => {
     (req as any).user = {
       id: verified.id,
       email: verified.email,
+      is_admin: verified.is_admin,
     }
 
     next()
