@@ -8,6 +8,7 @@ import { getChallenges, getChallenge, createChallenge, submitAnswer } from './co
 import { getAchievements, getUserAchievements, createAchievement } from "./controllers/achievements";
 import { getLeaderboard } from "./controllers/leaderboard";
 import { upload } from "./middlewares/multer";
+import { isAdmin } from "./middlewares/verifyAdmin";
 
 // User
 router.get('/user', userAuth, getUser)
@@ -23,15 +24,15 @@ router.post('/logout', logout)
 
 // Paths
 router.get('/paths', getPaths)
-router.post('/paths', userAuth, upload.single('path_icon'), createPath)
+router.post('/paths', userAuth, isAdmin, upload.single('path_icon'), createPath)
 
 // Topics
 router.get('/paths/:path_id/topics', getTopics)
-router.post('/paths/:path_id/topics', userAuth, upload.single('topic_icon'), createTopic)
+router.post('/paths/:path_id/topics', userAuth, isAdmin, upload.single('topic_icon'), createTopic)
 
 // Challenges
 router.get('/topics/:topic_id/challenges', getChallenges)
-router.post('/topics/:topic_id/challenges', userAuth, createChallenge)
+router.post('/topics/:topic_id/challenges', userAuth, isAdmin, createChallenge)
 
 // Challenge
 router.get('/challenges/:challenge_id', userAuth, getChallenge)
@@ -40,7 +41,7 @@ router.post('/challenges/:challenge_id/submit', userAuth, submitAnswer)
 //Achievements
 router.get('/achievements', getAchievements)
 router.get('/user/achievements', userAuth, getUserAchievements)
-router.post('/achievements', upload.single('achievement_icon'), userAuth, createAchievement)
+router.post('/achievements', userAuth, isAdmin, upload.single('achievement_icon'), createAchievement)
 
 // Leaderboard
 router.get('/leaderboard', getLeaderboard)
