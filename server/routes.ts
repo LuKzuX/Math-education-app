@@ -5,7 +5,7 @@ import { signup, signin, verifyEmail, forgotPassword, resetPassword, getUser, ge
 import { getPaths, createPath } from './controllers/pathsControllers'
 import { getTopics, createTopic } from './controllers/topicsControllers'
 import { getChallenges, getChallenge, createChallenge, submitAnswer } from './controllers/challengesControllers'
-import { getAchievements, getUserAchievements, createAchievement } from "./controllers/achievments";
+import { getAchievements, getUserAchievements, createAchievement } from "./controllers/achievements";
 import { getLeaderboard } from "./controllers/leaderboard";
 import { upload } from "./middlewares/multer";
 
@@ -23,7 +23,7 @@ router.post('/logout', logout)
 
 // Paths
 router.get('/paths', getPaths)
-router.post('/paths', userAuth, createPath)
+router.post('/paths', userAuth, upload.single('path_icon'), createPath)
 
 // Topics
 router.get('/paths/:path_id/topics', getTopics)
