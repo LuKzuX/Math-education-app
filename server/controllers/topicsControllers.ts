@@ -45,6 +45,6 @@ export const getTopics: RequestHandler = async (req, res, next) => {
   const { data, error } = await supabase
     .from('topics')
     .select('*')
-    .eq('topic_id', path_id)
+    .eq('path_id', path_id)
   res.send(data)
 }

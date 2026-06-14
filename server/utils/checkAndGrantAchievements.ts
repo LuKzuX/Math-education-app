@@ -18,7 +18,7 @@ export const checkAndGrantAchievements = async (user_id: string) => {
   const golds =
     attempts?.filter((attempt) => attempt.medal_earned === 'gold').length ?? 0
   const totalCorrect = attempts?.length ?? 0
-  const level = user.level
+  const level = user.user_level  
   const streak = user.streak
 
   const stats = {

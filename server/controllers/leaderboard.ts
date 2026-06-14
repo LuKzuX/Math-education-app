@@ -9,6 +9,6 @@ export const getLeaderboard: RequestHandler = async (req, res, next) => {
     const { data, error } = await supabase
         .from("users")
         .select("*")
-        .order("total_xp")
+        .order('total_xp', { ascending: false })
     res.json(data)
 }
