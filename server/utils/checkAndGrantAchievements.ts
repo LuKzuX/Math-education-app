@@ -52,7 +52,7 @@ export const checkAndGrantAchievements = async (user_id: string) => {
       const { data: topicAttempts } = await supabase
         .from('attempts')
         .select('*')
-        .eq('challenge_id', challengeIds)
+        .in('challenge_id', challengeIds)
         .eq('user_id', user_id)
 
       if ((topicAttempts?.length ?? 0) >= challengesByTopic.length) {
