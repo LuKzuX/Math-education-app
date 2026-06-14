@@ -59,25 +59,7 @@ export const getChallenge: RequestHandler = async (
         .split(',')
         .map((part: string) => part.trim())
     }
-    // myCache.set(`challenge_${challenge_id}`, {
-    //   challenge_id: data.challenge_id,
-    //   text: question_text,
-    //   variables: variables,
-    //   alternatives: alternatives,
-    //   correct_answer: evaluated_answer,
-    //   title: data.title,
-    //   difficulty: data.difficulty,
-    //   gold_time_sec: data.gold_time_sec,
-    //   silver_time_sec: data.silver_time_sec,
-    //   xp_gold: data.xp_gold,
-    //   xp_silver: data.xp_silver,
-    //   xp_bronze: data.xp_bronze,
-    //   hint_text: data.hint_text,
-    // })
-    // myCache.set(`attempt_${challenge_id}`, {
-    //   started_at: Date.now(),
-    //   sec_elapsed: 0,
-    // })
+
     await supabase.from('current_challenges').upsert(
       {
         user_id: id,

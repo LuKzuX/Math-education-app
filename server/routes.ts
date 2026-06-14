@@ -27,7 +27,7 @@ router.post('/paths', userAuth, upload.single('path_icon'), createPath)
 
 // Topics
 router.get('/paths/:path_id/topics', getTopics)
-router.post('/paths/:path_id/topics', userAuth, createTopic)
+router.post('/paths/:path_id/topics', userAuth, upload.single('topic_icon'), createTopic)
 
 // Challenges
 router.get('/topics/:topic_id/challenges', getChallenges)
