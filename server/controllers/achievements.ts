@@ -39,12 +39,13 @@ export const createAchievement: RequestHandler = async (req: AuthRequest, res, n
     .from('achievements_icons')
     .getPublicUrl(fileName)
 
-  await supabase.from('achievements').insert({
-    title,
-    description,
-    xp_earned,
-    icon_url: publicUrl
-  })
-
+  const { data: ach, error: err } = await supabase.from('achievements')
+    .insert({
+      title,
+      description,
+      xp_earned,
+      icon_url: publicUrl
+    })
+  res.send(ach)
 }
 
