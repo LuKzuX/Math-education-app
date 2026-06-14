@@ -11,10 +11,10 @@ export const createPath: RequestHandler = async (req, res, next) => {
   await supabase.storage.from('path_icons').upload(fileName, file.buffer, { contentType: file.mimetype })
   const { data: { publicUrl } } = supabase.storage.from('path_icons').getPublicUrl(fileName)
 
-  const name_url = title.toLowerCase().replace(/\s+/g, '_')
+  const path_url = title.toLowerCase().replace(/\s+/g, '_')
   const { data, error } = await supabase
     .from('paths')
-    .insert({ name_url, title, description, path_icon: publicUrl, order })
+    .insert({ path_url, title, description, path_icon: publicUrl, order })
     .select()
     .single()
 
