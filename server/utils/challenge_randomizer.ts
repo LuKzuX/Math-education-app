@@ -34,6 +34,8 @@ export const challenge_randomizer = (
     const expression = Object.values(alternative)[0]
     const parts = expression.split(',').map((part: string) => part.trim())
     const letters = ['a', 'b', 'c', 'd']
+
+
     const resolved = parts.map((part: string) =>
       part.replace(/\{(\d+)\}/g, (_: string, index: string) =>
         String(variables[Number(index)] ?? `{${index}}`)
@@ -58,6 +60,13 @@ export const challenge_randomizer = (
   const evaluated = resolved_answer
     .split(',')
     .map((part) => parser.evaluate(part.trim().replace(/\*\*/g, '^')))
+
+  //question text
+  question_text = question_text.replace(
+    /\{(\d+)\}/g,
+    (_: string, i: string) => String(variables[Number(i)]) ?? `{${i}}`,
+  )
+
 
   return { variables, alternatives, evaluated_answer: evaluated, question_text }
 }
