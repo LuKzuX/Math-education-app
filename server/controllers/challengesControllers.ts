@@ -4,7 +4,6 @@ import { challenge_randomizer } from '../utils/challenge_randomizer'
 import { checkAndGrantAchievements } from '../utils/checkAndGrantAchievements'
 import { RequestHandler } from 'express'
 import { calculateUserLevel } from "../utils/calculateUserLevel";
-const Parser = require('expr-eval').Parser
 
 export const getChallenges: RequestHandler = async (req, res, next) => {
   const { topic_id } = req.params
@@ -22,7 +21,6 @@ export const getChallenge: RequestHandler = async (
 ) => {
   if (!req.user) return res.status(401).json({ error: 'Unauthorized' })
   const { id } = req.user
-  const parser = new Parser()
   const { challenge_id } = req.params
   const { data, error } = await supabase
     .from('challenges')
@@ -73,7 +71,6 @@ export const getChallenge: RequestHandler = async (
   })
 }
 
-
 export const submitAnswer: RequestHandler = async (
   req: AuthRequest,
   res,
@@ -82,8 +79,7 @@ export const submitAnswer: RequestHandler = async (
   const { challenge_id } = req.params
   if (!req.user) return res.status(401).json({ error: 'Unauthorized' })
   const { id } = req.user
-  const { user_answer, hint_used } = req.body
-  let user_answer_value = null
+  let { user_answer, hint_used } = req.body
   let isEqual = true
   const { data: challengeData, error } = await supabase
     .from('current_challenges')
@@ -99,26 +95,17 @@ export const submitAnswer: RequestHandler = async (
       (Date.now() - new Date(challengeData.started_at).getTime()) / 1000,
     )
 
+    let answer = undefined
+    const expected_answer = challengeData.correct_answer
     for (let i = 0; i < challengeData.alternatives.length; i++) {
-      let alternative_values = []
-      alternative_values.push(challengeData.alternatives[i][user_answer])
-      for (let j = 0; j < alternative_values.length; j++) {
-        if (alternative_values[j] !== undefined) {
-          user_answer_value = alternative_values[j]
-        }
-      }
-    }
-    if (user_answer_value.length !== challengeData.evaluated_answer.length) {
-      isEqual = false
-    } else {
-      for (let i = 0; i < user_answer_value.length; i++) {
-        if (user_answer_value[i] !== challengeData.evaluated_answer[i]) {
-          isEqual = false
-          break
-        }
+      if (challengeData.alternatives[i][user_answer] !== undefined) {
+        answer = challengeData.alternatives[i][user_answer]
+        break
       }
     }
 
+    isEqual = JSON.stringify(answer) === JSON.stringify(expected_answer)
+    
     if (!challengeData || !attempt_time) {
       return res
         .status(404)
