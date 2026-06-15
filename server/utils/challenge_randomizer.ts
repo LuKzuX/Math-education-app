@@ -35,7 +35,6 @@ export const challenge_randomizer = (
     const parts = expression.split(',').map((part: string) => part.trim())
     const letters = ['a', 'b', 'c', 'd']
 
-
     const resolved = parts.map((part: string) =>
       part.replace(/\{(\d+)\}/g, (_: string, index: string) =>
         String(variables[Number(index)] ?? `{${index}}`)
@@ -43,11 +42,7 @@ export const challenge_randomizer = (
     )
 
     const parsed = resolved.map((r: string) => parser.evaluate(r))
-
-    for (let i = 0; i < alternatives_options.length; i++) {
-      alternatives[i] = { [letters[i]]: parsed }
-    }
-
+    alternatives[i] = { [letters[i]]: parsed }
     alternatives_options = alternatives_options.filter((alt) => alt !== alternative)
   }
 
