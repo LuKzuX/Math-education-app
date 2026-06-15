@@ -215,7 +215,7 @@ export const submitAnswer: RequestHandler = async (
         .single()
 
       const userLevel = calculateUserLevel(user.total_xp + xp_earned)
-      
+
       const { data: userData } = await supabase
         .from('users')
         .update({
@@ -315,5 +315,61 @@ export const createChallenge: RequestHandler = async (req, res, next) => {
     .single()
 
   if (error) return res.status(409).json(error)
+  res.send(data)
+}
+
+export const updateChallenge: RequestHandler = async (req, res, next) => {
+  const { challenge_id } = req.params
+  const { title,
+    challenge_text,
+    difficulty,
+    gold_time_sec,
+    silver_time_sec,
+    xp_gold,
+    xp_silver,
+    xp_bronze,
+    variables_range,
+    alternatives_options,
+    correct_answer,
+    hint_text, } = req.body
+
+  const { variables, alternatives } = challenge_randomizer(
+    variables_range,
+    alternatives_options,)
+    
+  const { data, error } = await supabase
+    .from('challenges')
+    .update({
+      title,
+      challenge_text,
+      difficulty,
+      gold_time_sec,
+      silver_time_sec,
+      xp_gold,
+      xp_silver,
+      xp_bronze,
+      variables_range,
+      variables,
+      hint_text,
+      alternatives_options,
+      correct_answer,
+      alternatives,
+    })
+    .eq('challenge_id', challenge_id)
+    .select()
+    .single()
+  if (error) return res.status(404).json(error)
+  res.send(data)
+}
+
+export const deleteChallenge: RequestHandler = async (req, res, next) => {
+  const { challenge_id } = req.params
+  const { data, error } = await supabase
+    .from('challenges')
+    .delete()
+    .eq('challenge_id', challenge_id)
+    .select()
+    .single()
+  if (error) return res.status(404).json(error)
   res.send(data)
 }
