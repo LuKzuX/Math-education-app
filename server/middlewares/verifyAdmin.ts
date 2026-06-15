@@ -5,7 +5,7 @@ export const isAdmin: RequestHandler = (req: AuthRequest, res, next) => {
     if (!user) {
         return res.status(401).json({ message: 'Unauthorized' })
     }
-    if (!user.is_admin) {
+    if (user.is_admin == false) {
         return res.status(403).json({ message: 'Forbidden: Admins only' })
     }else{
         next()

@@ -29,58 +29,34 @@ export const getChallenge: RequestHandler = async (
     .select('*')
     .eq('challenge_id', challenge_id)
     .single()
-  const { variables, alternatives } = challenge_randomizer(
+  const { variables, alternatives, evaluated_answer, question_text } = challenge_randomizer(
     data.variables_range, // e.g. [10, 10] → two vars, each 1–10
     data.alternatives_options, // e.g. ["{0}+{1}", "{0}-{1}", "{0}*{1}", "{0}/{1}", "{1}-{0}"]
+    data.correct_answer,
+    data.challenge_text
   )
 
-  const question_text = data.challenge_text.replace(
-    /\{(\d+)\}/g,
-    (_: string, i: string) => String(variables[Number(i)]) ?? `{${i}}`,
+  await supabase.from('current_challenges').upsert(
+    {
+      user_id: id,
+      challenge_id,
+      question_text,
+      variables,
+      alternatives,
+      correct_answer: evaluated_answer,
+      title: data.title,
+      difficulty: data.difficulty,
+      gold_time_sec: data.gold_time_sec,
+      silver_time_sec: data.silver_time_sec,
+      xp_gold: data.xp_gold,
+      xp_silver: data.xp_silver,
+      xp_bronze: data.xp_bronze,
+      hint_text: data.hint_text,
+      started_at: new Date().toISOString(),
+    },
+    { onConflict: 'user_id' },
   )
 
-  let evaluated_answer = []
-  if (data.variables_range.length > 0) {
-    evaluated_answer = data.correct_answer.replace(
-      /\{(\d+)\}/g,
-      (_: string, i: string) => String(variables[Number(i)]) ?? `{${i}}`,
-    )
-    if (data.variables_range.length > 0) {
-      const resolved_answer = data.correct_answer.replace(
-        /\{(\d+)\}/g,
-        (_: string, i: string) => String(variables[Number(i)]) ?? `{${i}}`,
-      )
-
-      evaluated_answer = resolved_answer
-        .split(',')
-        .map((part: string) => parser.evaluate(part.trim()))
-    } else {
-      evaluated_answer = data.correct_answer
-        .split(',')
-        .map((part: string) => part.trim())
-    }
-
-    await supabase.from('current_challenges').upsert(
-      {
-        user_id: id,
-        challenge_id,
-        question_text,
-        variables,
-        alternatives,
-        evaluated_answer,
-        title: data.title,
-        difficulty: data.difficulty,
-        gold_time_sec: data.gold_time_sec,
-        silver_time_sec: data.silver_time_sec,
-        xp_gold: data.xp_gold,
-        xp_silver: data.xp_silver,
-        xp_bronze: data.xp_bronze,
-        hint_text: data.hint_text,
-        started_at: new Date().toISOString(),
-      },
-      { onConflict: 'user_id' },
-    )
-  }
   res.json({
     challenge_id: data.challenge_id,
     text: question_text,
@@ -96,6 +72,8 @@ export const getChallenge: RequestHandler = async (
     hint_text: data.hint_text,
   })
 }
+
+
 export const submitAnswer: RequestHandler = async (
   req: AuthRequest,
   res,
@@ -285,9 +263,11 @@ export const createChallenge: RequestHandler = async (req, res, next) => {
 
   const order = (last?.order ?? 0) + 1
 
-  const { variables, alternatives } = challenge_randomizer(
+  const { variables, alternatives, evaluated_answer, question_text } = challenge_randomizer(
     variables_range,
     alternatives_options,
+    correct_answer,
+    challenge_text
   )
 
 
@@ -333,15 +313,18 @@ export const updateChallenge: RequestHandler = async (req, res, next) => {
     correct_answer,
     hint_text, } = req.body
 
-  const { variables, alternatives } = challenge_randomizer(
+  const { variables, alternatives, evaluated_answer, question_text } = challenge_randomizer(
     variables_range,
-    alternatives_options,)
-    
+    alternatives_options,
+    correct_answer,
+    challenge_text
+  )
+
   const { data, error } = await supabase
     .from('challenges')
     .update({
       title,
-      challenge_text,
+      challenge_text: question_text,
       difficulty,
       gold_time_sec,
       silver_time_sec,
@@ -352,7 +335,7 @@ export const updateChallenge: RequestHandler = async (req, res, next) => {
       variables,
       hint_text,
       alternatives_options,
-      correct_answer,
+      correct_answer: evaluated_answer,
       alternatives,
     })
     .eq('challenge_id', challenge_id)
