@@ -28,12 +28,18 @@ export const challenge_randomizer = (
   }
   //alternatives
   const toFraction = (val: string) => {
+    let result = ""
+    if (Number.isInteger(val)) {
+      return val
+    }
     const strVal = val.toString()
     const floatVal = parseFloat(val)
     if (strVal.split(".")[1] == strVal.split(".")[2] && strVal.split(".")[2] == strVal.split(".")[3]) {
       let decimalMultiplied = floatVal * 10
-      let result = decimalMultiplied - floatVal
-      return `${result}/${9}`
+      let numerator = decimalMultiplied - floatVal
+      result = `${numerator}/${9}`
+    }else if(strVal){
+
     }
     return val
   }
@@ -49,10 +55,7 @@ export const challenge_randomizer = (
         String(variables[Number(index)] ?? `{${index}}`)
       ).replace(/\*\*/g, '^')
     )
-    const parsed = resolved.map((r: string) => {
-      if (r.includes("/")) return toFraction(parser.evaluate(r)); 
-      return parser.evaluate(r)
-    });
+    const parsed = resolved.map((r: string) => toFraction(parser.evaluate(r)));
     alternatives[i] = { [letters[i]]: parsed }
     alternatives_options = alternatives_options.filter((alt) => alt !== alternative)
   }
