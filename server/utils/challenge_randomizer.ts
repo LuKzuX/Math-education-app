@@ -27,42 +27,28 @@ export const challenge_randomizer = (
     variables.push(variable)
   }
   //alternatives
-  const toFraction = (val: string) => {
-    const numVal = Number(val);
-
-    if (Number.isInteger(numVal)) {
+  const toFraction = (val: number) => {
+    if (Number.isInteger(val)) {
       return val;
-    }
-
-    function gcd(a: number, b: number): number {
-      return b === 0 ? a : gcd(b, a % b);
     }
 
     const strVal = val.toString();
     const afterDot = strVal.split(".")[1];
+    const beforeDot = strVal.split(".")[0];
+    const numerator = parseInt(afterDot);
+    const denominator = 10 ** afterDot.length;
+    const wholeNumber = parseInt(beforeDot);
+    let defNumerator = (wholeNumber * denominator) + numerator;
+    let defDenominator = denominator;
+    let result = ""
+
 
     if (afterDot.length < 6) {
-      const beforeDot = strVal.split(".")[0];
-      const numerator = parseInt(afterDot);
-      const denominator = 10 ** afterDot.length;
-      const wholeNumber = parseInt(beforeDot);
-      let defNumerator = wholeNumber * denominator + numerator;
-      let defDenominator = denominator;
-
-      const divisor = gcd(Math.abs(defNumerator), defDenominator);
-      defNumerator = defNumerator / divisor;
-      defDenominator = defDenominator / divisor;
-
-      return `${defNumerator}/${defDenominator}`;
+      result = `${defNumerator}/${defDenominator}`
     } else {
-      for (let d = 1; d <= 10000; d++) {
-        const n = Math.round(numVal * d);
-        if (Math.abs(n / d - numVal) < 1e-9) {
-          return `${n}/${d}`;
-        }
-      }
-      return val; // fallback if no match found
+      return val
     }
+    return result
   };
   for (let i = 0; i < 4; i++) {
     let choosenAlternative = Math.floor(Math.random() * alternatives_options.length)
