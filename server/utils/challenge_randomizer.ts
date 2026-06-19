@@ -32,6 +32,16 @@ export const challenge_randomizer = (
       return val;
     }
 
+    function gcd(a: number, b: number): number {
+      let remainder: number;
+      do {
+        remainder = a % b;
+        a = b;
+        b = remainder;
+      } while (remainder !== 0);
+      return a;
+    }
+
     const strVal = val.toString();
     const afterDot = strVal.split(".")[1];
     const beforeDot = strVal.split(".")[0];
@@ -41,13 +51,27 @@ export const challenge_randomizer = (
     let defNumerator = (wholeNumber * denominator) + numerator;
     let defDenominator = denominator;
     let result = ""
+    const divisor = gcd(defNumerator, defDenominator);
 
-
-    if (afterDot.length < 6) {
-      result = `${defNumerator}/${defDenominator}`
+    if (afterDot.length < 4) {
+      result = `${defNumerator / divisor}/${defDenominator / divisor}`
     } else {
-      return val
+      let den = 0
+      for (let i = 1; i < afterDot.length / 2; i++) {
+        let first = afterDot.slice(0, i)
+        let second = afterDot.slice(i, i * 2)
+        if (first == second) {
+          den = 10 ** i - 1
+          const numerator = parseInt(first)
+          const divisor = gcd(numerator, den);
+          result = `${numerator / divisor}/${den / divisor}`
+          break
+        }
+      }
+
+      return result
     }
+
     return result
   };
   for (let i = 0; i < 4; i++) {
