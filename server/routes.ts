@@ -1,4 +1,5 @@
 import { Router } from "express";
+import express from 'express'
 export const router = Router()
 import { userAuth } from "./middlewares/userAuth";
 import { signup, signin, verifyEmail, forgotPassword, resetPassword, getUser, getUserAttempts, updateUser, logout } from "./controllers/userControllers";
