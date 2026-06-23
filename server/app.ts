@@ -3,18 +3,23 @@ import { router } from './routes';
 import cors from 'cors'
 import { config } from 'dotenv';
 import { RequestHandler } from 'express'
-import Stripe from "stripe";
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 import { AuthRequest } from './types/AuthRequest'
 import { supabase } from './db/connection';
+import Stripe from "stripe";
 
-
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 const app = express();
 const port: number = 4001;
 app.use(cors());
 
 
-
+app.post('/checkout', async (req, res) => {
+  const session = await stripe.checkout.sessions.create({
+    mode: 'subscription',
+    success_url: `${process.env.CLIENT_URL}/checkout-complete`,
+    cancel_url: `${process.env.CLIENT_URL}/checkout-cancel`
+  })
+})
 
 
 
