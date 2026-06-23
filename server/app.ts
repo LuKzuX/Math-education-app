@@ -15,6 +15,18 @@ app.use(cors());
 
 app.post('/checkout', async (req, res) => {
   const session = await stripe.checkout.sessions.create({
+    line_items: [
+      {
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: 'Pro Subscription'
+          },
+          unit_amount: 5 * 100
+        },
+        quantity: 1
+      }
+    ],
     mode: 'subscription',
     success_url: `${process.env.CLIENT_URL}/checkout-complete`,
     cancel_url: `${process.env.CLIENT_URL}/checkout-cancel`
