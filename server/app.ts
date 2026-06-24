@@ -13,7 +13,7 @@ const port: number = 4001;
 app.use(cors());
 
 
-app.post('/checkout', async (req, res) => {
+app.post('/mathly/checkout', async (req, res) => {
   const session = await stripe.checkout.sessions.create({
     line_items: [
       {
@@ -21,6 +21,9 @@ app.post('/checkout', async (req, res) => {
           currency: 'usd',
           product_data: {
             name: 'Pro Subscription'
+          },
+          recurring: {
+            interval: 'month'
           },
           unit_amount: 5 * 100
         },
@@ -31,6 +34,8 @@ app.post('/checkout', async (req, res) => {
     success_url: `${process.env.CLIENT_URL}/checkout-complete`,
     cancel_url: `${process.env.CLIENT_URL}/checkout-cancel`
   })
+  console.log(session);
+
 })
 
 
