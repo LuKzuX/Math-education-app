@@ -16,20 +16,21 @@ app.use(cors());
 
 app.post('/mathly/checkout', userAuth, async (req: AuthRequest, res) => {
   if (!req?.user) return res.json("you need to be logged in")
+  const plan = req.query.plan
+  if (!plan) return res.send("you need a plan")
+  let priceId
+  switch (plan) {
+    case 'pro':
+      priceId = 'price_1TkpDTLp9oLU8pvCqhHkxAKL'
+      break;
+    default:
+      return res.send('subscrioption not found')
+  }
   const session = await stripe.checkout.sessions.create({
     client_reference_id: req.user.id,
     line_items: [
       {
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            name: 'Pro Subscription'
-          },
-          recurring: {
-            interval: 'month'
-          },
-          unit_amount: 5 * 100
-        },
+        price: priceId,
         quantity: 1
       }
     ],
