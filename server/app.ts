@@ -5,6 +5,7 @@ import { config } from 'dotenv';
 import { RequestHandler } from 'express'
 import { AuthRequest } from './types/AuthRequest'
 import { supabase } from './db/connection';
+import { userAuth } from './middlewares/userAuth';
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
@@ -13,8 +14,10 @@ const port: number = 4001;
 app.use(cors());
 
 
-app.post('/mathly/checkout', async (req, res) => {
+app.post('/mathly/checkout', userAuth, async (req: AuthRequest, res) => {
+  if (!req?.user) return res.json("you need to be logged in")
   const session = await stripe.checkout.sessions.create({
+    client_reference_id: req.user.id,
     line_items: [
       {
         price_data: {
@@ -34,10 +37,8 @@ app.post('/mathly/checkout', async (req, res) => {
     success_url: `${process.env.CLIENT_URL}/checkout-complete`,
     cancel_url: `${process.env.CLIENT_URL}/checkout-cancel`
   })
-  console.log(session);
-
-
-} )
+  res.json({ url: session.url })
+})
 
 
 
