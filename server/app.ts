@@ -105,8 +105,6 @@ app.post(
           .eq('id', userId)
           .select()
 
-        console.log('update result - data:', data, 'error:', error)
-
         if (error) console.error('webhook update failed:', error)
         break
       }
