@@ -8,6 +8,7 @@ import { supabase } from './db/connection';
 import { userAuth } from './middlewares/userAuth';
 import Stripe from "stripe";
 
+config();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 const app = express();
 const port: number = 4001;
@@ -45,21 +46,6 @@ app.post('/mathly/checkout', userAuth, async (req: AuthRequest, res) => {
   res.send(session.url)
 })
 
-app.get('/checkout-complete', async (req, res) => {
-  const sessionId = req.query.session_id;
-
-  if (typeof sessionId !== 'string') {
-    return res.status(400).send('Missing or invalid session_id');
-  }
-  const session = await stripe.checkout.sessions.retrieve(sessionId, { expand: ['subscription'] })
-  console.log(JSON.stringify(session));
-  res.send("subscribe succesfully")
-})
-
-app.get('/checkout-cancel', async (req, res) => {
-  res.redirect("/")
-})
-
 app.get('/mathly/portal', userAuth, async (req: AuthRequest, res) => {
   if (!req.user) return res.status(401).send('not logged in')
 
@@ -82,7 +68,6 @@ app.get('/mathly/portal', userAuth, async (req: AuthRequest, res) => {
   res.redirect(portalSection.url)
 })
 
-// In the ENTRY FILE, this must register BEFORE app.use(express.json())
 app.post(
   '/mathly/webhook',
   express.raw({ type: 'application/json' }),
@@ -97,8 +82,11 @@ app.post(
         process.env.STRIPE_WEBHOOK_SECRET_KEY!
       )
     } catch (err) {
+      console.error('webhook signature error:', (err as Error).message)
       return res.status(400).send(`Webhook Error: ${(err as Error).message}`)
     }
+
+    console.log('webhook event type:', event.type)
 
     switch (event.type) {
       case 'checkout.session.completed': {
@@ -106,13 +94,18 @@ app.post(
         const userId = session.client_reference_id
         const customerId = session.customer as string
 
-        const { error } = await supabase
+        console.log('userId:', userId, 'customerId:', customerId)
+
+        const { data, error } = await supabase
           .from('users')
           .update({
             stripe_customer_id: customerId,
             subscription_status: 'active',
           })
           .eq('id', userId)
+          .select()
+
+        console.log('update result - data:', data, 'error:', error)
 
         if (error) console.error('webhook update failed:', error)
         break
@@ -148,7 +141,6 @@ app.post(
 
 app.use(express.json());
 app.use('/mathly', router);
-
 
 app.listen(port, () => {
   console.log(`Server running at ${port}`);
