@@ -43,6 +43,7 @@ export const challenge_randomizer = (
     }
 
     const strVal = val.toString();
+    const sign = strVal[0] !== "-" ? " " : "-" 
     const afterDot = strVal.split(".")[1];
     const beforeDot = strVal.split(".")[0];
     const numerator = parseInt(afterDot);
@@ -54,7 +55,7 @@ export const challenge_randomizer = (
     const divisor = gcd(defNumerator, defDenominator);
 
     if (afterDot.length < 4) {
-      result = `${defNumerator / divisor}/${defDenominator / divisor}`
+      result = `${sign}${defNumerator / divisor}/${defDenominator / divisor}`
     } else {
       let den = 0
       for (let i = 1; i < afterDot.length / 2; i++) {
@@ -64,7 +65,7 @@ export const challenge_randomizer = (
           den = 10 ** i - 1
           const numerator = parseInt(first)
           const divisor = gcd(numerator, den);
-          result = `${numerator / divisor}/${den / divisor}`
+          result = `${sign}${numerator / divisor}/${den / divisor}`
           break
         }
       }

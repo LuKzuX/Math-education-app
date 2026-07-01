@@ -2,7 +2,6 @@ import express from 'express';
 import { router } from './routes';
 import cors from 'cors'
 import { config } from 'dotenv';
-import { RequestHandler } from 'express'
 import { AuthRequest } from './types/AuthRequest'
 import { supabase } from './db/connection';
 import { userAuth } from './middlewares/userAuth';
