@@ -42,8 +42,6 @@ export const updateUser: RequestHandler = async (req: AuthRequest, res, next) =>
       return res.status(409).json({ message: 'This email already exists' })
     }
 
-
-
     const token = crypto.randomBytes(32).toString('hex')
     const expires = new Date(Date.now() + 1000 * 60 * 60);
     const verifyLink = `mathly/verify-email?token=${token}`
