@@ -21,6 +21,7 @@ import AdminPaths from './pages/admin/AdminPaths.tsx'
 import AdminTopics from './pages/admin/AdminTopics.tsx'
 import AdminChallenges from './pages/admin/AdminChallenges.tsx'
 import AdminAchievements from './pages/admin/AdminAchievements.tsx'
+import Paths from './pages/Paths.tsx'
 
 const router = createBrowserRouter([
   {
@@ -29,6 +30,7 @@ const router = createBrowserRouter([
     children: [
       // Paths -> Topics -> Challenges (GET /paths, /paths/:path_id/topics, /topics/:topic_id/challenges)
       { index: true, element: <Home /> },
+      { path: 'paths', element: <Paths /> },
       { path: 'paths/:pathId', element: <PathTopics /> },
       { path: 'topics/:topicId', element: <TopicChallenges /> },
 

@@ -8,7 +8,8 @@ export const createPath: RequestHandler = async (req, res, next) => {
 
   const { title, description, order } = req.body
 
-  await supabase.storage.from('path_icons').upload(fileName, file.buffer, { contentType: file.mimetype })
+  const { error: uploadError } = await supabase.storage.from('path_icons').upload(fileName, file.buffer, { contentType: file.mimetype })
+  if (uploadError) return res.status(500).json(uploadError)
   const { data: { publicUrl } } = supabase.storage.from('path_icons').getPublicUrl(fileName)
 
   const path_url = title.toLowerCase().replace(/\s+/g, '_')
@@ -33,7 +34,8 @@ export const updatePath: RequestHandler = async (req, res, next) => {
   const fileName = file?.originalname
 
   if (file && fileName) {
-    await supabase.storage.from('path_icons').upload(fileName, file.buffer, { contentType: file.mimetype })
+    const { error: uploadError } = await supabase.storage.from('path_icons').upload(fileName, file.buffer, { contentType: file.mimetype })
+    if (uploadError) return res.status(500).json(uploadError)
     const { data: { publicUrl } } = supabase.storage.from('path_icons').getPublicUrl(fileName)
     req.body.path_icon = publicUrl
   }
