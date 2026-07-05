@@ -44,7 +44,7 @@ export const updateUser: RequestHandler = async (req: AuthRequest, res, next) =>
 
     const token = crypto.randomBytes(32).toString('hex')
     const expires = new Date(Date.now() + 1000 * 60 * 60);
-    const verifyLink = `mathly/verify-email?token=${token}`
+    const verifyLink = `${process.env.CLIENT_URL}verify-email?token=${token}`
 
     await supabase.from('password_reset_tokens').insert({
       user_id: user_id,
@@ -130,7 +130,7 @@ export const signup: RequestHandler = async (req, res, next) => {
     return res.status(500).json({ message: profileError })
   }
 
-  const verifyLink = `mathly/verify-email?token=${token}`
+  const verifyLink = `${process.env.CLIENT_URL}verify-email?token=${token}`
   await resend.emails.send({
     from: 'App <onboarding@resend.dev>',
     to: email,
@@ -208,7 +208,7 @@ export const forgotPassword: RequestHandler = async (req, res, next) => {
   try {
     const { email } = req.body
     const token = crypto.randomBytes(32).toString('hex')
-    const verifyLink = `mathly/password-reset?token=${token}`
+    const verifyLink = `${process.env.CLIENT_URL}password-reset?token=${token}`
 
     const { data: user } = await supabase
       .from('users')

@@ -3,12 +3,13 @@ import { useState } from "react"
 
 function ForgotPassword() {
   const [email, setEmail] = useState('')
+  const [message, setMessage] = useState('')
   const handleSubmit = async () => {
     try {
       const res = await axios.post('/mathly/forgot-password', { email })
-      console.log(res);
+      setMessage(res.data.message)
     } catch (error) {
-      console.log(error);
+      console.log(error)
     }
   }
   return (
@@ -16,9 +17,10 @@ function ForgotPassword() {
       <h1>Forgot password</h1>
       <input
         className="border"
-        type="text" value={email} onChange={(e) => setEmail(e.target.value)}>
+        type="email" value={email} onChange={(e) => setEmail(e.target.value)}>
       </input>
-      <button onClick={handleSubmit}>submit</button>
+      <button className="border" onClick={handleSubmit}>submit</button>
+      {message && <p>{message}</p>}
     </div>
   )
 }
