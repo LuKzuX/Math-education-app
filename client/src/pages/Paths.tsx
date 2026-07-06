@@ -38,15 +38,15 @@ function Paths() {
         .font-display { font-family: 'Space Grotesk', sans-serif; }
         .font-data    { font-family: 'JetBrains Mono', monospace; }
         .bg-scene {
-          background:
+        background:
             radial-gradient(1200px 500px at 50% 115%, rgba(18,48,85,.27) 0%, transparent 70%),
             radial-gradient(800px 300px at 85% -10%, rgba(26,18,58,.2) 0%, transparent 70%),
             #020617;
         }
         .path-glow:hover, .path-glow:focus-visible {
-          box-shadow: 0 8px 32px -12px color-mix(in srgb, var(--pc) 55%, transparent);
+        box-shadow: 0 8px 32px -12px color-mix(in srgb, var(--pc) 55%, transparent);
         }
-      `}</style>
+    `}</style>
 
             <main className="w-full max-w-4xl mx-auto px-4 sm:px-6 md:px-8 py-6 sm:py-8 md:py-12">
                 {/* Header */}

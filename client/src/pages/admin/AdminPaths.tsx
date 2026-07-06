@@ -1,3 +1,5 @@
+import * as FaIcons from 'react-icons/fa'
+
 function AdminPaths() {
   return (
     <div>
