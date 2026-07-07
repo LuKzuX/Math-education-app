@@ -60,52 +60,105 @@ function AdminPaths() {
   });
 
   return (
-    <div>
-      <h1>Manage paths</h1>
-      <input className='border' type='text' onChange={(e) => setTitle(e.target.value)} placeholder='title'></input>
-      <input className='border' type='text' onChange={(e) => setDescription(e.target.value)} placeholder='desc'></input>
-      <input
-        type="text"
-        placeholder="Search icons (e.g., 'book', 'calculator')..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="w-full border p-2 rounded mb-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
-      <button className='border' onClick={handleSubmit}>submit</button>
+    <div className="min-h-screen bg-[#0a0f1e] px-4 sm:px-6 md:px-8 py-10">
+      <div className="max-w-2xl mx-auto">
 
-      {/* 3. Render icons dynamically based on their specific library prefix */}
-      <div className="flex flex-wrap gap-2 mt-4">
-        {filteredIcons.map(({ libPrefix, matchingNames }) => {
-          return matchingNames.map((iconName) => {
-            // Pull dynamically from the correct library using its prefix
-            const IconComponent = allIconLibraries[libPrefix][iconName];
-            const isSelected = selectedIcon === iconName;
+        {/* Header with skewed cyan blade */}
+        <div className="relative pl-5 mb-8">
+          <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-cyan-400 -skew-x-12" />
+          <h1 className="font-['Space_Grotesk'] text-2xl sm:text-3xl font-bold text-slate-100 tracking-tight">
+            Manage Paths
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">Create a new learning path</p>
+        </div>
 
-            // Guard clause in case an icon component is missing
-            if (!IconComponent) return null;
+        {/* Form card */}
+        <div className="bg-[#0f1629] border border-slate-800 rounded-xl p-5 sm:p-6 space-y-4">
 
-            return (
-              <button
-                key={iconName}
-                type="button"
-                title={iconName}
-                onClick={() => {
-                  setSelectedIcon(iconName)
-                  setPathIcon(iconName)
-                }}
-                className={`p-2 border rounded flex items-center justify-center hover:bg-blue-50 transition-colors ${isSelected
-                    ? 'border-blue-600 bg-blue-100 text-blue-600 ring-2 ring-blue-400'
-                    : 'border-gray-200 text-gray-600'
-                  }`}
-              >
-                <IconComponent size={20} />
-              </button>
-            );
-          });
-        })}
+          <div>
+            <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5">
+              Title
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Computer Science"
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full bg-[#0a0f1e] border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-colors"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5">
+              Description
+            </label>
+            <input
+              type="text"
+              placeholder="Short tagline shown on the path picker"
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full bg-[#0a0f1e] border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-colors"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5">
+              Icon
+            </label>
+            <input
+              type="text"
+              placeholder="Search icons (e.g. 'book', 'calculator')..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-[#0a0f1e] border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-colors"
+            />
+
+            {/* Icon grid */}
+            <div className="flex flex-wrap gap-2 mt-3 max-h-56 overflow-y-auto pr-1">
+              {filteredIcons.map(({ libPrefix, matchingNames }) => {
+                return matchingNames.map((iconName) => {
+                  const IconComponent = allIconLibraries[libPrefix][iconName];
+                  const isSelected = selectedIcon === iconName;
+
+                  if (!IconComponent) return null;
+
+                  return (
+                    <button
+                      key={iconName}
+                      type="button"
+                      title={iconName}
+                      onClick={() => {
+                        setSelectedIcon(iconName);
+                        setPathIcon(iconName);
+                      }}
+                      className={`p-2.5 rounded-lg border flex items-center justify-center transition-colors ${isSelected
+                          ? 'border-cyan-400 bg-cyan-400/10 text-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.25)]'
+                          : 'border-slate-700 text-slate-500 hover:border-slate-500 hover:text-slate-300'
+                        }`}
+                    >
+                      <IconComponent size={20} />
+                    </button>
+                  );
+                });
+              })}
+            </div>
+
+            {selectedIcon && (
+              <p className="mt-2 text-xs text-slate-500">
+                Selected: <span className="font-['JetBrains_Mono'] text-cyan-300">{selectedIcon}</span>
+              </p>
+            )}
+          </div>
+
+          <button
+            onClick={handleSubmit}
+            className="w-full sm:w-auto mt-2 px-6 py-2.5 rounded-lg bg-cyan-400 text-[#0a0f1e] text-sm font-semibold font-['Space_Grotesk'] tracking-wide hover:bg-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/60 focus:ring-offset-2 focus:ring-offset-[#0f1629] transition-colors"
+          >
+            Create path
+          </button>
+        </div>
       </div>
     </div>
-  )
+  );
+
 }
 
 export default AdminPaths;
