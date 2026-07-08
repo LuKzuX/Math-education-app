@@ -187,16 +187,16 @@ export const signin: RequestHandler = async (req, res, next) => {
     }
 
     const token = jwt.sign(
-      { id: profile.id, email: profile.email },
+      { id: profile.id, email: profile.email, is_admin: profile.is_admin },
       process.env.JWT_SECRET as string,
       { expiresIn: '9d' },
     )
 
+    const { password: _password, ...safeProfile } = profile
+
     res.json({
       token,
-      user: {
-        profile,
-      },
+      user: safeProfile,
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal server error'

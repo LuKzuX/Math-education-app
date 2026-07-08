@@ -25,13 +25,13 @@ router.post('/logout', logout)
 
 // Paths
 router.get('/paths', getPaths)
-router.post('/paths', userAuth, isAdmin, upload.single('path_icon'), createPath)
+router.post('/paths', userAuth, isAdmin, upload.none(), createPath)
 router.patch('/paths/:path_id', userAuth, isAdmin, upload.single('path_icon'), updatePath)
 router.delete('/paths/:path_id', userAuth, isAdmin, deletePath)
 
 // Topics
 router.get('/paths/:path_id/topics', getTopics)
-router.post('/paths/:path_id/topics', userAuth, isAdmin, upload.single('topic_icon'), createTopic)
+router.post('/paths/:path_id/topics', userAuth, isAdmin, createTopic)
 router.patch('/topics/:topic_id', userAuth, isAdmin, upload.single('topic_icon'), updateTopic)
 router.delete('/topics/:topic_id', userAuth, isAdmin, deleteTopic)
 router.get('/topics/:topic_id/medals', userAuth, getTopicMedals)

@@ -2,20 +2,13 @@ import { supabase } from '../db/connection'
 import { RequestHandler } from 'express'
 
 export const createPath: RequestHandler = async (req, res, next) => {
-  const file = req.file
-  const fileName = file?.originalname
-  if (!file || !fileName) return res.status(400).json({ error: 'icon is required' })
-
-  const { title, description, order } = req.body
-
-  const { error: uploadError } = await supabase.storage.from('path_icons').upload(fileName, file.buffer, { contentType: file.mimetype })
-  if (uploadError) return res.status(500).json(uploadError)
-  const { data: { publicUrl } } = supabase.storage.from('path_icons').getPublicUrl(fileName)
+  const { title, description, path_icon, order } = req.body
+  if (!path_icon) return res.status(400).json({ error: 'icon is required' })
 
   const path_url = title.toLowerCase().replace(/\s+/g, '_')
   const { data, error } = await supabase
     .from('paths')
-    .insert({ path_url, title, description, path_icon: publicUrl, order })
+    .insert({ path_url, title, description, path_icon, order })
     .select()
     .single()
 

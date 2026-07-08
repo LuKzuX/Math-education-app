@@ -1,5 +1,24 @@
 import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import axios from "axios"
+import { useAuth } from "../context/authContext"
+import * as FaIcons from "react-icons/fa"
+import * as MdIcons from "react-icons/md"
+import * as HiIcons from "react-icons/hi"
+import * as BiIcons from "react-icons/bi"
+
+const iconLibraries: Record<string, Record<string, React.ComponentType<{ size?: number; className?: string }>>> = {
+    fa: FaIcons,
+    md: MdIcons,
+    hi: HiIcons,
+    bi: BiIcons,
+}
+
+function PathIcon({ name, className }: { name: string; className?: string }) {
+    const IconComponent = iconLibraries[name.slice(0, 2).toLowerCase()]?.[name]
+    if (!IconComponent) return null
+    return <IconComponent className={className} />
+}
 
 interface Path {
     id: string
@@ -12,6 +31,8 @@ interface Path {
 
 function Paths() {
     const [paths, setPaths] = useState<Path[]>([])
+    const navigate = useNavigate()
+    const { user } = useAuth()
 
     useEffect(() => {
         const getPaths = async () => {
@@ -64,10 +85,42 @@ function Paths() {
 
                 {/* Path cards */}
                 <div className="flex flex-col gap-3 md:gap-4">
+                    {user?.is_admin && (
+                        <div
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => navigate("/admin/paths")}
+                            onKeyDown={(e) => e.key === "Enter" && navigate("/admin/paths")}
+                            className="path-glow group relative flex items-center gap-4 md:gap-6 overflow-hidden
+                         rounded-xl border border-dashed border-slate-700 bg-slate-900/40 backdrop-blur-sm
+                         px-4 sm:px-6 py-4 sm:py-5 cursor-pointer transition-all duration-200
+                         hover:border-slate-400 focus-visible:border-slate-400
+                         focus-visible:outline-none"
+                        >
+                            <div className="shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-lg flex items-center justify-center
+                           bg-slate-800/60 border border-slate-700 text-2xl">
+                                +
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h2 className="font-display font-bold text-base md:text-lg text-slate-100">
+                                    Create new path
+                                </h2>
+                                <p className="mt-0.5 text-xs md:text-sm text-slate-500">
+                                    Admin — manage paths
+                                </p>
+                            </div>
+                            <span className="shrink-0 font-data text-[11px] tracking-widest uppercase text-slate-400">
+                                Manage »
+                            </span>
+                        </div>
+                    )}
                     {paths.map((path, i) => (
                         <div
                             key={path.id}
+                            role="button"
                             tabIndex={0}
+                            onClick={() => navigate(`/paths/${path.id}`)}
+                            onKeyDown={(e) => e.key === "Enter" && navigate(`/paths/${path.id}`)}
                             style={{ "--pc": accents[i % accents.length] } as React.CSSProperties}
                             className="path-glow group relative flex items-center gap-4 md:gap-6 overflow-hidden
                          rounded-xl border border-slate-800 bg-slate-900/60 backdrop-blur-sm
@@ -93,7 +146,7 @@ function Paths() {
                            bg-[color-mix(in_srgb,var(--pc)_12%,transparent)]
                            border border-[color-mix(in_srgb,var(--pc)_25%,transparent)]"
                             >
-                                <img src={path.path_icon} alt="" className="w-7 h-7 md:w-8 md:h-8 object-contain" />
+                                <PathIcon name={path.path_icon} className="w-7 h-7 md:w-8 md:h-8" />
                             </div>
 
                             {/* Body */}

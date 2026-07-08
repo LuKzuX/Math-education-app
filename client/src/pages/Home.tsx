@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
+import { useAuth } from '../context/authContext'
 
 interface UserStats {
   username: string
@@ -10,6 +12,8 @@ interface UserStats {
 
 function Home() {
   const [stats, setStats] = useState<UserStats | null>(null)
+  const navigate = useNavigate()
+  const { user } = useAuth()
 
   useEffect(() => {
     const getUser = async () => {
@@ -77,7 +81,7 @@ function Home() {
               <span className="h-px w-16 bg-gradient-to-r from-cyan-400 to-transparent" />
             </div>
             <h1 className="font-display font-bold text-2xl sm:text-3xl md:text-5xl tracking-tight">
-              Welcome back{stats?.username ? `, ${stats.username}` : ''}
+              Welcome back{user?.username ? `, ${user.username}` : ''}
             </h1>
             <p className="mt-2 md:mt-3 text-slate-400 text-sm md:text-[15px]">
               Pick up where you left off, or check your standings.
@@ -89,6 +93,7 @@ function Home() {
             {/* Paths — primary tile */}
             <button
               type="button"
+              onClick={() => navigate('/paths')}
               className="glow-cyan group relative md:col-span-3 min-h-36 md:min-h-56 flex flex-col justify-end gap-1 md:gap-1.5 p-5 pl-7 md:p-7 md:pl-9 text-left overflow-hidden rounded bg-slate-900 border border-slate-800 transition duration-200 hover:-translate-y-0.5 hover:border-cyan-400 focus-visible:outline-none focus-visible:-translate-y-0.5 focus-visible:border-cyan-400 motion-reduce:transition-none motion-reduce:transform-none"
             >
               <span className="absolute inset-y-0 left-0 w-1 -skew-x-12 bg-cyan-400 transition-all duration-200 group-hover:w-2 group-focus-visible:w-2 motion-reduce:transition-none" />
@@ -104,6 +109,7 @@ function Home() {
             {/* Leaderboard */}
             <button
               type="button"
+              onClick={() => navigate('/leaderboard')}
               className="glow-gold group relative min-h-28 md:min-h-40 flex flex-col justify-end gap-1 md:gap-1.5 p-5 pl-7 md:p-7 md:pl-9 text-left overflow-hidden rounded bg-slate-900 border border-slate-800 transition duration-200 hover:-translate-y-0.5 hover:border-amber-300 focus-visible:outline-none focus-visible:-translate-y-0.5 focus-visible:border-amber-300 motion-reduce:transition-none motion-reduce:transform-none"
             >
               <span className="absolute inset-y-0 left-0 w-1 -skew-x-12 bg-amber-300 transition-all duration-200 group-hover:w-2 group-focus-visible:w-2 motion-reduce:transition-none" />
@@ -118,6 +124,7 @@ function Home() {
             {/* Achievements */}
             <button
               type="button"
+              onClick={() => navigate('/achievements')}
               className="glow-violet group relative min-h-28 md:min-h-40 flex flex-col justify-end gap-1 md:gap-1.5 p-5 pl-7 md:p-7 md:pl-9 text-left overflow-hidden rounded bg-slate-900 border border-slate-800 transition duration-200 hover:-translate-y-0.5 hover:border-violet-400 focus-visible:outline-none focus-visible:-translate-y-0.5 focus-visible:border-violet-400 motion-reduce:transition-none motion-reduce:transform-none"
             >
               <span className="absolute inset-y-0 left-0 w-1 -skew-x-12 bg-violet-400 transition-all duration-200 group-hover:w-2 group-focus-visible:w-2 motion-reduce:transition-none" />
@@ -132,6 +139,7 @@ function Home() {
             {/* Profile */}
             <button
               type="button"
+              onClick={() => navigate('/profile')}
               className="glow-rose group relative min-h-28 md:min-h-40 flex flex-col justify-end gap-1 md:gap-1.5 p-5 pl-7 md:p-7 md:pl-9 text-left overflow-hidden rounded bg-slate-900 border border-slate-800 transition duration-200 hover:-translate-y-0.5 hover:border-rose-400 focus-visible:outline-none focus-visible:-translate-y-0.5 focus-visible:border-rose-400 motion-reduce:transition-none motion-reduce:transform-none"
             >
               <span className="absolute inset-y-0 left-0 w-1 -skew-x-12 bg-rose-400 transition-all duration-200 group-hover:w-2 group-focus-visible:w-2 motion-reduce:transition-none" />

@@ -1,6 +1,5 @@
 import axios from 'axios'
 import { useState } from 'react'
-import { useAuth } from '../../context/authContext'
 import * as FaIcons from 'react-icons/fa';
 import * as MdIcons from 'react-icons/md';
 import * as HiIcons from 'react-icons/hi';
@@ -16,7 +15,6 @@ function AdminPaths() {
 
   const [selectedIcon, setSelectedIcon] = useState("")
   const [searchTerm, setSearchTerm] = useState('');
-  const { user } = useAuth()
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [pathIcon, setPathIcon] = useState<string | null>(null);
@@ -33,9 +31,10 @@ function AdminPaths() {
       formData.append('description', description);
       formData.append('path_icon', pathIcon);
 
+      const token = localStorage.getItem('token')
       const response = await axios.post("/mathly/paths", formData, {
         headers: {
-          Authorization: `Bearer ${user}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
         },
       });
