@@ -4,6 +4,7 @@ import { challenge_randomizer } from '../utils/challenge_randomizer'
 import { checkAndGrantAchievements } from '../utils/checkAndGrantAchievements'
 import { RequestHandler } from 'express'
 import { calculateUserLevel } from "../utils/calculateUserLevel";
+import { applyLifeRegeneration } from "../utils/regenerateLives";
 
 export const getChallenges: RequestHandler = async (req, res, next) => {
   const { topic_id } = req.params
@@ -25,11 +26,15 @@ export const getChallenge: RequestHandler = async (
 
   const { data: user } = await supabase
     .from('users')
-    .select('lives')
+    .select('lives, last_life_lost_at')
     .eq('id', id)
     .single()
 
-  if (!user || user.lives <= 0)
+  if (!user) return res.status(403).json({ error: 'No lives remaining' })
+
+  const { lives } = await applyLifeRegeneration({ id, ...user })
+
+  if (lives <= 0)
     return res.status(403).json({ error: 'No lives remaining' })
 
   const { data, error } = await supabase
@@ -183,11 +188,13 @@ export const submitAnswer: RequestHandler = async (
         streak = data ? (streak = 0) : (streak = 1)
       }
 
-      const { data: user } = await supabase
+      const { data: userRow } = await supabase
         .from('users')
         .select('*')
         .eq('id', id)
         .single()
+
+      const user = await applyLifeRegeneration(userRow)
 
       const userLevel = calculateUserLevel(user.total_xp + xp_earned)
 
@@ -214,19 +221,27 @@ export const submitAnswer: RequestHandler = async (
 
       lostLives = data && data.length > 0 ? 0 : 1
 
-      const { data: user } = await supabase
+      const { data: userRow } = await supabase
         .from('users')
         .select('*')
         .eq('id', id)
         .single()
 
+      const user = await applyLifeRegeneration(userRow)
+
+      const lives = Math.max(0, user.lives - lostLives)
+      const last_life_lost_at =
+        lostLives > 0 && !user.last_life_lost_at
+          ? new Date().toISOString()
+          : user.last_life_lost_at
+
       await supabase
         .from('users')
-        .update({ streak: (user.streak = 0), lives: (user.lives -= lostLives) })
+        .update({ streak: 0, lives, last_life_lost_at })
         .eq('id', id)
         .select()
         .single()
-      res.send(user)
+      res.send({ ...user, streak: 0, lives, last_life_lost_at })
     }
   } finally {
     await supabase.from('current_challenges').delete().eq('user_id', id)
