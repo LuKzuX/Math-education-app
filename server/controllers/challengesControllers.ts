@@ -22,6 +22,16 @@ export const getChallenge: RequestHandler = async (
   if (!req.user) return res.status(401).json({ error: 'Unauthorized' })
   const { id } = req.user
   const { challenge_id } = req.params
+
+  const { data: user } = await supabase
+    .from('users')
+    .select('lives')
+    .eq('id', id)
+    .single()
+
+  if (!user || user.lives <= 0)
+    return res.status(403).json({ error: 'No lives remaining' })
+
   const { data, error } = await supabase
     .from('challenges')
     .select('*')
