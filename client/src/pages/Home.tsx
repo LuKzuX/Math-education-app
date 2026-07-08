@@ -1,4 +1,31 @@
+import { useEffect, useState } from 'react'
+import axios from 'axios'
+
+interface UserStats {
+  username: string
+  total_xp: number
+  streak: number
+  lives: number
+}
+
 function Home() {
+  const [stats, setStats] = useState<UserStats | null>(null)
+
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const token = localStorage.getItem('token')
+        const { data } = await axios.get('/mathly/user', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        setStats(data)
+      } catch (error) {
+        console.log(error)
+      }
+    }
+    getUser()
+  }, [])
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 text-slate-200 antialiased font-body">
       <style>{`
@@ -28,15 +55,15 @@ function Home() {
           <div className="flex gap-4 sm:gap-7">
             <div className="flex items-baseline gap-2">
               <span className="hidden sm:inline text-[10px] font-medium uppercase tracking-widest text-slate-600">XP</span>
-              <span className="font-data font-bold text-sm tabular-nums text-cyan-400">12,480</span>
+              <span className="font-data font-bold text-sm tabular-nums text-cyan-400">{(stats?.total_xp ?? 0).toLocaleString()}</span>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="hidden sm:inline text-[10px] font-medium uppercase tracking-widest text-slate-600">Streak</span>
-              <span className="font-data font-bold text-sm tabular-nums text-orange-400">🔥 7</span>
+              <span className="font-data font-bold text-sm tabular-nums text-orange-400">🔥 {stats?.streak ?? 0}</span>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="hidden sm:inline text-[10px] font-medium uppercase tracking-widest text-slate-600">Lives</span>
-              <span className="font-data font-bold text-sm tabular-nums text-rose-400">♥ 5</span>
+              <span className="font-data font-bold text-sm tabular-nums text-rose-400">♥ {stats?.lives ?? 0}</span>
             </div>
           </div>
         </header>
@@ -50,7 +77,7 @@ function Home() {
               <span className="h-px w-16 bg-gradient-to-r from-cyan-400 to-transparent" />
             </div>
             <h1 className="font-display font-bold text-2xl sm:text-3xl md:text-5xl tracking-tight">
-              Welcome back, Lucas
+              Welcome back{stats?.username ? `, ${stats.username}` : ''}
             </h1>
             <p className="mt-2 md:mt-3 text-slate-400 text-sm md:text-[15px]">
               Pick up where you left off, or check your standings.
