@@ -9,7 +9,25 @@ type LivesState = {
 }
 
 export function calculateRegeneratedLives(user: LivesState): LivesState & { changed: boolean } {
-  
+  if (user.lives >= MAX_LIVES || !user.last_life_lost_at) {
+    return { lives: user.lives, last_life_lost_at: user.last_life_lost_at, changed: false }
+  }
+
+  const elapsedMs = Date.now() - new Date(user.last_life_lost_at).getTime()
+  const intervalsPassed = Math.floor(elapsedMs / LIFE_REGEN_INTERVAL_MS)
+
+  if (intervalsPassed <= 0) {
+    return { lives: user.lives, last_life_lost_at: user.last_life_lost_at, changed: false }
+  }
+
+  const lives = Math.min(MAX_LIVES, user.lives + intervalsPassed)
+  const last_life_lost_at =
+    lives >= MAX_LIVES
+      ? null
+      : new Date(
+          new Date(user.last_life_lost_at).getTime() + intervalsPassed * LIFE_REGEN_INTERVAL_MS,
+        ).toISOString()
+
   return { lives, last_life_lost_at, changed: true }
 }
 
