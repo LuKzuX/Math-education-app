@@ -120,12 +120,6 @@ export const submitAnswer: RequestHandler = async (
     }
 
     isEqual = JSON.stringify(answer) === JSON.stringify(expected_answer)
-    
-    if (!challengeData || !attempt_time) {
-      return res
-        .status(404)
-        .json({ error: 'Challenge session not found or expired' })
-    }
 
     if (isEqual) {
       let streak = 0
@@ -210,16 +204,9 @@ export const submitAnswer: RequestHandler = async (
         .single()
 
       checkAndGrantAchievements(id)
-      return res.send(userData)
+      return res.send({ ...userData, correct: true, medal, xp_earned })
     } else {
-      let lostLives = 0
-      const { data, error } = await supabase
-        .from('attempts')
-        .select('*')
-        .eq('user_id', id)
-        .eq('challenge_id', challenge_id)
-
-      lostLives = data && data.length > 0 ? 0 : 1
+      const lostLives = 1
 
       const { data: userRow } = await supabase
         .from('users')
@@ -241,7 +228,7 @@ export const submitAnswer: RequestHandler = async (
         .eq('id', id)
         .select()
         .single()
-      res.send({ ...user, streak: 0, lives, last_life_lost_at })
+      res.send({ ...user, streak: 0, lives, last_life_lost_at, correct: false })
     }
   } finally {
     await supabase.from('current_challenges').delete().eq('user_id', id)
@@ -336,7 +323,7 @@ export const updateChallenge: RequestHandler = async (req, res, next) => {
     .from('challenges')
     .update({
       title,
-      challenge_text: question_text,
+      challenge_text,
       difficulty,
       gold_time_sec,
       silver_time_sec,
@@ -347,7 +334,7 @@ export const updateChallenge: RequestHandler = async (req, res, next) => {
       variables,
       hint_text,
       alternatives_options,
-      correct_answer: evaluated_answer,
+      correct_answer,
       alternatives,
     })
     .eq('challenge_id', challenge_id)

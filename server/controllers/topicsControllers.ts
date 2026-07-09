@@ -3,15 +3,9 @@ import { RequestHandler } from 'express'
 import { AuthRequest } from '../types/AuthRequest'
 
 export const createTopic: RequestHandler = async (req, res, next) => {
-  const file = req.file
-  const fileName = file?.originalname
-  if (!file || !fileName) return res.status(400).json({ error: 'icon is required' })
-
   const { path_id } = req.params
-  const { title, description } = req.body
-
-  await supabase.storage.from('topic_icons').upload(fileName, file.buffer, { contentType: file.mimetype })
-  const { data: { publicUrl } } = supabase.storage.from('topic_icons').getPublicUrl(fileName)
+  const { title, description, topic_icon } = req.body
+  if (!topic_icon) return res.status(400).json({ error: 'icon is required' })
 
   const topic_url = title.toLowerCase().replace(/\s+/g, '_')
   const { data: last } = await supabase
@@ -31,8 +25,7 @@ export const createTopic: RequestHandler = async (req, res, next) => {
       topic_url,
       description,
       order,
-      topic_icon: publicUrl,
-
+      topic_icon,
     })
     .select()
     .single()
@@ -66,7 +59,7 @@ export const updateTopic: RequestHandler = async (req, res, next) => {
   const { data, error } = await supabase
     .from('topics')
     .update({ title, topic_url, description, topic_icon: req.body.topic_icon })
-    .eq('id', topic_id)
+    .eq('topic_id', topic_id)
     .select()
     .single()
 
@@ -76,7 +69,7 @@ export const updateTopic: RequestHandler = async (req, res, next) => {
 
 export const deleteTopic: RequestHandler = async (req, res, next) => {
   const { topic_id } = req.params
-  const { error } = await supabase.from('topics').delete().eq('id', topic_id)
+  const { error } = await supabase.from('topics').delete().eq('topic_id', topic_id)
   if (error) return res.status(409).json(error)
   res.sendStatus(204)
 }

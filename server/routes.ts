@@ -31,7 +31,7 @@ router.delete('/paths/:path_id', userAuth, isAdmin, deletePath)
 
 // Topics
 router.get('/paths/:path_id/topics', getTopics)
-router.post('/paths/:path_id/topics', userAuth, isAdmin, createTopic)
+router.post('/paths/:path_id/topics', userAuth, isAdmin, upload.none(), createTopic)
 router.patch('/topics/:topic_id', userAuth, isAdmin, upload.single('topic_icon'), updateTopic)
 router.delete('/topics/:topic_id', userAuth, isAdmin, deleteTopic)
 router.get('/topics/:topic_id/medals', userAuth, getTopicMedals)
@@ -39,6 +39,7 @@ router.get('/topics/:topic_id/medals', userAuth, getTopicMedals)
 // Challenges
 router.get('/topics/:topic_id/challenges', getChallenges)
 router.post('/topics/:topic_id/challenges', userAuth, isAdmin, createChallenge)
+router.patch('/topics/:topic_id/challenge/challenge_id', userAuth, isAdmin, updateChallenge)
 
 // Challenge
 router.get('/challenges/:challenge_id', userAuth, getChallenge)

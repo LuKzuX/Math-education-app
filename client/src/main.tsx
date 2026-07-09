@@ -57,6 +57,7 @@ const router = createBrowserRouter([
       { path: 'admin/paths', element: <AdminPaths /> },
       { path: 'admin/paths/:pathId/topics', element: <AdminTopics /> },
       { path: 'admin/topics/:topicId/challenges', element: <AdminChallenges /> },
+      { path: 'admin/topics/:topicId/challenges/:challengeId/edit', element: <AdminChallenges /> },
       { path: 'admin/achievements', element: <AdminAchievements /> },
 
       { path: '*', element: <NotFound /> },

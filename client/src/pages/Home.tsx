@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { useAuth } from '../context/authContext'
+import { FaFire, FaHeart, FaMap, FaTrophy, FaMedal, FaUser } from 'react-icons/fa6'
 
 interface UserStats {
   username: string
@@ -63,11 +64,15 @@ function Home() {
             </div>
             <div className="flex items-baseline gap-2">
               <span className="hidden sm:inline text-[10px] font-medium uppercase tracking-widest text-slate-600">Streak</span>
-              <span className="font-data font-bold text-sm tabular-nums text-orange-400">🔥 {stats?.streak ?? 0}</span>
+              <span className="font-data font-bold text-sm tabular-nums text-orange-400 inline-flex items-center gap-1.5">
+                <FaFire className="w-3.5 h-3.5" /> {stats?.streak ?? 0}
+              </span>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="hidden sm:inline text-[10px] font-medium uppercase tracking-widest text-slate-600">Lives</span>
-              <span className="font-data font-bold text-sm tabular-nums text-rose-400">♥ {stats?.lives ?? 0}</span>
+              <span className="font-data font-bold text-sm tabular-nums text-rose-400 inline-flex items-center gap-1.5">
+                <FaHeart className="w-3.5 h-3.5" /> {stats?.lives ?? 0}
+              </span>
             </div>
           </div>
         </header>
@@ -98,7 +103,7 @@ function Home() {
             >
               <span className="absolute inset-y-0 left-0 w-1 -skew-x-12 bg-cyan-400 transition-all duration-200 group-hover:w-2 group-focus-visible:w-2 motion-reduce:transition-none" />
 
-              <span className="text-xl md:text-2xl mb-1 md:mb-2">🗺️</span>
+              <FaMap className="w-5 h-5 md:w-6 md:h-6 mb-1 md:mb-2 text-cyan-400" />
               <h2 className="font-display font-bold text-lg md:text-xl tracking-tight">Paths</h2>
               <p className="text-[13px] text-slate-400">Choose a track and climb its skill tree.</p>
               <span className="font-data text-[11px] font-bold uppercase tracking-widest text-cyan-400 mt-2 md:mt-3 md:opacity-0 md:-translate-x-1.5 transition duration-200 group-hover:opacity-100 group-hover:translate-x-0 group-focus-visible:opacity-100 group-focus-visible:translate-x-0 motion-reduce:transition-none">
@@ -113,7 +118,7 @@ function Home() {
               className="glow-gold group relative min-h-28 md:min-h-40 flex flex-col justify-end gap-1 md:gap-1.5 p-5 pl-7 md:p-7 md:pl-9 text-left overflow-hidden rounded bg-slate-900 border border-slate-800 transition duration-200 hover:-translate-y-0.5 hover:border-amber-300 focus-visible:outline-none focus-visible:-translate-y-0.5 focus-visible:border-amber-300 motion-reduce:transition-none motion-reduce:transform-none"
             >
               <span className="absolute inset-y-0 left-0 w-1 -skew-x-12 bg-amber-300 transition-all duration-200 group-hover:w-2 group-focus-visible:w-2 motion-reduce:transition-none" />
-              <span className="text-xl md:text-2xl mb-1 md:mb-2">🏆</span>
+              <FaTrophy className="w-5 h-5 md:w-6 md:h-6 mb-1 md:mb-2 text-amber-300" />
               <h2 className="font-display font-bold text-lg md:text-xl tracking-tight">Leaderboard</h2>
               <p className="text-[13px] text-slate-400">View top users.</p>
               <span className="font-data text-[11px] font-bold uppercase tracking-widest text-amber-300 mt-2 md:mt-3 md:opacity-0 md:-translate-x-1.5 transition duration-200 group-hover:opacity-100 group-hover:translate-x-0 group-focus-visible:opacity-100 group-focus-visible:translate-x-0 motion-reduce:transition-none">
@@ -128,7 +133,7 @@ function Home() {
               className="glow-violet group relative min-h-28 md:min-h-40 flex flex-col justify-end gap-1 md:gap-1.5 p-5 pl-7 md:p-7 md:pl-9 text-left overflow-hidden rounded bg-slate-900 border border-slate-800 transition duration-200 hover:-translate-y-0.5 hover:border-violet-400 focus-visible:outline-none focus-visible:-translate-y-0.5 focus-visible:border-violet-400 motion-reduce:transition-none motion-reduce:transform-none"
             >
               <span className="absolute inset-y-0 left-0 w-1 -skew-x-12 bg-violet-400 transition-all duration-200 group-hover:w-2 group-focus-visible:w-2 motion-reduce:transition-none" />
-              <span className="text-xl md:text-2xl mb-1 md:mb-2">🎖️</span>
+              <FaMedal className="w-5 h-5 md:w-6 md:h-6 mb-1 md:mb-2 text-violet-400" />
               <h2 className="font-display font-bold text-lg md:text-xl tracking-tight">Achievements</h2>
               <p className="text-[13px] text-slate-400">Medals and milestones.</p>
               <span className="font-data text-[11px] font-bold uppercase tracking-widest text-violet-400 mt-2 md:mt-3 md:opacity-0 md:-translate-x-1.5 transition duration-200 group-hover:opacity-100 group-hover:translate-x-0 group-focus-visible:opacity-100 group-focus-visible:translate-x-0 motion-reduce:transition-none">
@@ -143,7 +148,7 @@ function Home() {
               className="glow-rose group relative min-h-28 md:min-h-40 flex flex-col justify-end gap-1 md:gap-1.5 p-5 pl-7 md:p-7 md:pl-9 text-left overflow-hidden rounded bg-slate-900 border border-slate-800 transition duration-200 hover:-translate-y-0.5 hover:border-rose-400 focus-visible:outline-none focus-visible:-translate-y-0.5 focus-visible:border-rose-400 motion-reduce:transition-none motion-reduce:transform-none"
             >
               <span className="absolute inset-y-0 left-0 w-1 -skew-x-12 bg-rose-400 transition-all duration-200 group-hover:w-2 group-focus-visible:w-2 motion-reduce:transition-none" />
-              <span className="text-xl md:text-2xl mb-1 md:mb-2">👤</span>
+              <FaUser className="w-5 h-5 md:w-6 md:h-6 mb-1 md:mb-2 text-rose-400" />
               <h2 className="font-display font-bold text-lg md:text-xl tracking-tight">Profile</h2>
               <p className="text-[13px] text-slate-400">Your stats and settings.</p>
               <span className="font-data text-[11px] font-bold uppercase tracking-widest text-rose-400 mt-2 md:mt-3 md:opacity-0 md:-translate-x-1.5 transition duration-200 group-hover:opacity-100 group-hover:translate-x-0 group-focus-visible:opacity-100 group-focus-visible:translate-x-0 motion-reduce:transition-none">
