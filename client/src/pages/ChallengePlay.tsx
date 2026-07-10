@@ -65,30 +65,30 @@ function ChallengePlay() {
   useEffect(() => {
     let cancelled = false
     const token = localStorage.getItem("token")
-    ;(async () => {
-      try {
-        const { data } = await axios.get(`/mathly/challenges/${challengeId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        if (cancelled) return
-        setChallenge(data)
-        setFetchError(null)
-        setSelected(null)
-        setResult(null)
-        setHintShown(false)
-        setElapsedSec(0)
-        startRef.current = Date.now()
-      } catch (error) {
-        if (cancelled) return
-        const message = axios.isAxiosError(error)
-          ? error.response?.data?.error ?? "Failed to load challenge"
-          : "Failed to load challenge"
-        setFetchError(message)
-        setChallenge(null)
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    })()
+      ; (async () => {
+        try {
+          const { data } = await axios.get(`/mathly/challenges/${challengeId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          if (cancelled) return
+          setChallenge(data)
+          setFetchError(null)
+          setSelected(null)
+          setResult(null)
+          setHintShown(false)
+          setElapsedSec(0)
+          startRef.current = Date.now()
+        } catch (error) {
+          if (cancelled) return
+          const message = axios.isAxiosError(error)
+            ? error.response?.data?.error ?? "Failed to load challenge"
+            : "Failed to load challenge"
+          setFetchError(message)
+          setChallenge(null)
+        } finally {
+          if (!cancelled) setLoading(false)
+        }
+      })()
     return () => {
       cancelled = true
     }
@@ -213,7 +213,7 @@ function ChallengePlay() {
                         <p className="font-data text-sm tabular-nums text-slate-400 inline-flex items-center gap-1.5">
                           <FaStopwatch className="w-3.5 h-3.5" /> {formatTime(elapsedSec)}
                         </p>
-                        <div className="mt-1 flex items-center justify-end gap-2 font-data text-[10px] tabular-nums text-slate-500">
+                        <div className="mt-1 flex items-center justify-end gap-2 font-data text-[12px] tabular-nums text-slate-500">
                           <span className="inline-flex items-center gap-1" style={{ color: medalStyles.gold.color }}>
                             <FaMedal /> {formatTime(challenge.gold_time_sec)}
                           </span>
@@ -294,8 +294,8 @@ function ChallengePlay() {
             {result && (
               <div
                 className={`rounded-xl border px-6 py-8 text-center mb-6 ${result.correct
-                    ? "border-emerald-800/60 bg-emerald-950/30"
-                    : "border-rose-900/60 bg-rose-950/30"
+                  ? "border-emerald-800/60 bg-emerald-950/30"
+                  : "border-rose-900/60 bg-rose-950/30"
                   }`}
               >
                 {result.correct ? (
@@ -331,8 +331,8 @@ function ChallengePlay() {
                 onClick={retry}
                 disabled={result.lives === 0}
                 className="w-full font-data text-[12px] tracking-widest uppercase text-cyan-400
-                         border border-cyan-400/40 rounded-lg px-4 py-3 hover:bg-cyan-400/10
-                         transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                border border-cyan-400/40 rounded-lg px-4 py-3 hover:bg-cyan-400/10
+                transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
               >
                 {result.lives === 0 ? "No lives remaining" : "Try again"}
               </button>
