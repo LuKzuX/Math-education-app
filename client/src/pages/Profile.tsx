@@ -1,8 +1,11 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import axios from "axios"
 import { useAuth } from "../context/authContext"
-import { FaUser, FaFire, FaHeart, FaStar, FaRightFromBracket } from "react-icons/fa6"
+import { FaUser, FaFire, FaHeart, FaStar, FaRightFromBracket, FaCamera } from "react-icons/fa6"
+
+const MAX_AVATAR_SIZE = 5 * 1024 * 1024
+const ALLOWED_AVATAR_TYPES = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"]
 
 interface UserProfile {
   id: string
@@ -31,6 +34,10 @@ function Profile() {
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
 
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => {
     const getProfile = async () => {
       try {
@@ -54,6 +61,34 @@ function Profile() {
     getProfile()
   }, [])
 
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview)
+    }
+  }, [avatarPreview])
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file) return
+
+    setSaveError(null)
+    setSaveMessage(null)
+
+    if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+      setSaveError("Please choose a PNG, JPEG, WEBP, or SVG image")
+      return
+    }
+    if (file.size > MAX_AVATAR_SIZE) {
+      setSaveError("Image must be smaller than 5MB")
+      return
+    }
+
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview)
+    setAvatarFile(file)
+    setAvatarPreview(URL.createObjectURL(file))
+  }
+
   const handleSave = async () => {
     if (!profile) return
     setSaving(true)
@@ -61,19 +96,28 @@ function Profile() {
     setSaveError(null)
     try {
       const token = localStorage.getItem("token")
-      const updates: Record<string, string> = {}
-      if (username && username !== profile.username) updates.username = username
-      if (email && email !== profile.email) updates.email = email
+      const textUpdates: Record<string, string> = {}
+      if (username && username !== profile.username) textUpdates.username = username
+      if (email && email !== profile.email) textUpdates.email = email
 
-      if (Object.keys(updates).length === 0) {
+      if (Object.keys(textUpdates).length === 0 && !avatarFile) {
         setSaveMessage("Nothing to update")
         return
       }
 
-      const { data } = await axios.patch("/mathly/user/update", updates, {
+      const formData = new FormData()
+      Object.entries(textUpdates).forEach(([key, value]) => formData.append(key, value))
+      if (avatarFile) formData.append("profile_picture", avatarFile)
+
+      const { data } = await axios.patch("/mathly/user/update", formData, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      setProfile((prev) => (prev ? { ...prev, ...updates } : prev))
+      setProfile((prev) =>
+        prev ? { ...prev, ...textUpdates, ...(data.avatar_url ? { avatar_url: data.avatar_url } : {}) } : prev
+      )
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview)
+      setAvatarFile(null)
+      setAvatarPreview(null)
       setSaveMessage(data.message ?? "Profile updated")
     } catch (error) {
       const message = axios.isAxiosError(error)
@@ -110,7 +154,7 @@ function Profile() {
       <main className="w-full max-w-2xl mx-auto px-4 sm:px-6 md:px-8 py-6 sm:py-8 md:py-12">
         {/* Back link */}
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/menu")}
           className="inline-block font-data text-[11px] tracking-[0.25em] uppercase text-slate-500 hover:text-cyan-400 transition-colors mb-6"
         >
           « Main menu
@@ -139,13 +183,30 @@ function Profile() {
           <>
             {/* Header */}
             <header className="mb-8 flex items-center gap-4">
-              <div className="shrink-0 w-16 h-16 rounded-full flex items-center justify-center bg-rose-400/10 border border-rose-400/30 overflow-hidden">
-                {profile.avatar_url ? (
+              <button
+                type="button"
+                onClick={() => avatarInputRef.current?.click()}
+                className="group relative shrink-0 w-16 h-16 rounded-full flex items-center justify-center bg-rose-400/10 border border-rose-400/30 overflow-hidden focus:outline-none focus:ring-1 focus:ring-rose-400/50"
+                title="Change profile picture"
+              >
+                {avatarPreview ? (
+                  <img src={avatarPreview} alt="" className="w-full h-full object-cover" />
+                ) : profile.avatar_url ? (
                   <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <FaUser className="w-6 h-6 text-rose-400" />
                 )}
-              </div>
+                <span className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <FaCamera className="w-4 h-4 text-slate-100" />
+                </span>
+              </button>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                onChange={handleAvatarChange}
+                className="hidden"
+              />
               <div className="min-w-0">
                 <p className="font-data text-[11px] tracking-[0.25em] uppercase text-rose-400/70 mb-1">
                   Profile
@@ -153,6 +214,9 @@ function Profile() {
                 <h1 className="font-display font-bold text-2xl md:text-3xl text-slate-50 tracking-tight truncate">
                   {profile.username}
                 </h1>
+                {avatarFile && (
+                  <p className="mt-1 text-[11px] text-cyan-400">New picture selected — save to apply</p>
+                )}
               </div>
             </header>
 

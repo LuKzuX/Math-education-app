@@ -11,7 +11,21 @@ config();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 const app = express();
 const port: number = 4001;
-app.use(cors());
+
+const allowedOrigins = (process.env.CLIENT_URL ?? '')
+  .split(',')
+  .map((origin) => origin.trim().replace(/\/$/, ''))
+  .filter(Boolean)
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ''))) {
+      return callback(null, true)
+    }
+    console.error(`CORS rejected origin "${origin}". Allowed: ${allowedOrigins.join(', ')}`)
+    callback(new Error('Not allowed by CORS'))
+  },
+}));
 
 
 app.post('/mathly/checkout', userAuth, async (req: AuthRequest, res) => {
@@ -138,6 +152,16 @@ app.post(
 
 app.use(express.json());
 app.use('/mathly', router);
+
+app.use((req, res) => {
+  res.status(404).json({ message: 'Not found' })
+})
+
+app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error(err)
+  if (res.headersSent) return next(err)
+  res.status(500).json({ message: 'Internal server error' })
+})
 
 app.listen(port, () => {
   console.log(`Server running at ${port}`);

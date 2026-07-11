@@ -7,7 +7,7 @@ export const challenge_randomizer = (
   alternatives_options: object[],
   evaluated_answer: string,
   question_text: string
-): { variables: number[]; alternatives: object[]; evaluated_answer: number[]; question_text: string } => {
+): { variables: number[]; alternatives: object[]; evaluated_answer: (number | string)[]; question_text: string } => {
   const parser = new Parser()
   const variables: number[] = []
   const alternatives: object[] = []
@@ -42,38 +42,26 @@ export const challenge_randomizer = (
       return a;
     }
 
-    const strVal = val.toString();
-    const sign = strVal[0] !== "-" ? " " : "-" 
-    const afterDot = strVal.split(".")[1];
-    const beforeDot = strVal.split(".")[0];
-    const numerator = parseInt(afterDot);
-    const denominator = 10 ** afterDot.length;
-    const wholeNumber = parseInt(beforeDot);
-    let defNumerator = (wholeNumber * denominator) + numerator;
-    let defDenominator = denominator;
-    let result = ""
-    const divisor = gcd(defNumerator, defDenominator);
+    // Continued-fraction expansion: finds the exact numerator/denominator for
+    // any rational value, unlike string-matching on toString() digits, which
+    // breaks whenever the repeating block doesn't start right after the
+    // decimal point or floating-point rounding perturbs the trailing digits.
+    const sign = val < 0 ? "-" : " "
+    const absVal = Math.abs(val)
 
-    if (afterDot.length < 4) {
-      result = `${sign}${defNumerator / divisor}/${defDenominator / divisor}`
-    } else {
-      let den = 0
-      for (let i = 1; i < afterDot.length / 2; i++) {
-        let first = afterDot.slice(0, i)
-        let second = afterDot.slice(i, i * 2)
-        if (first == second) {
-          den = 10 ** i - 1
-          const numerator = parseInt(first)
-          const divisor = gcd(numerator, den);
-          result = `${sign}${numerator / divisor}/${den / divisor}`
-          break
-        }
-      }
-
-      return result
+    let h1 = 1, h2 = 0, k1 = 0, k2 = 1, b = absVal
+    for (let i = 0; i < 30; i++) {
+      const a = Math.floor(b)
+      const h = a * h1 + h2
+      const k = a * k1 + k2
+      h2 = h1; h1 = h
+      k2 = k1; k1 = k
+      if (Math.abs(absVal - h1 / k1) < 1e-9 * Math.max(absVal, 1) || b - a === 0) break
+      b = 1 / (b - a)
     }
 
-    return result
+    const divisor = gcd(h1, k1);
+    return `${sign}${h1 / divisor}/${k1 / divisor}`
   };
   for (let i = 0; i < 4; i++) {
     let choosenAlternative = Math.floor(Math.random() * alternatives_options.length)
@@ -100,7 +88,7 @@ export const challenge_randomizer = (
 
   const evaluated = resolved_answer
     .split(',')
-    .map((part) => parser.evaluate(part.trim().replace(/\*\*/g, '^')))
+    .map((part) => toFraction(parser.evaluate(part.trim().replace(/\*\*/g, '^'))))
 
   //question text
   question_text = question_text.replace(

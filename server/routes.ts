@@ -20,7 +20,7 @@ router.post('/verify-email', verifyEmail)
 router.post('/forgot-password', forgotPassword)
 router.post('/reset-password', resetPassword)
 router.get('/user-attempts', userAuth, getUserAttempts)
-router.patch('/user/update', userAuth, updateUser)
+router.patch('/user/update', userAuth, upload.single('profile_picture'), updateUser)
 router.post('/logout', logout)
 
 // Paths

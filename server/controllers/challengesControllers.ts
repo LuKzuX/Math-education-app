@@ -7,12 +7,17 @@ import { calculateUserLevel } from "../utils/calculateUserLevel";
 import { applyLifeRegeneration } from "../utils/regenerateLives";
 
 export const getChallenges: RequestHandler = async (req, res, next) => {
-  const { topic_id } = req.params
-  const { data, error } = await supabase
-    .from('challenges')
-    .select('*')
-    .eq('topic_id', topic_id)
-  res.send(data)
+  try {
+    const { topic_id } = req.params
+    const { data, error } = await supabase
+      .from('challenges')
+      .select('*')
+      .eq('topic_id', topic_id)
+    if (error) return res.status(500).json({ error: error.message })
+    res.send(data)
+  } catch (error) {
+    next(error)
+  }
 }
 
 export const getChallenge: RequestHandler = async (
@@ -20,43 +25,65 @@ export const getChallenge: RequestHandler = async (
   res,
   next,
 ) => {
-  if (!req.user) return res.status(401).json({ error: 'Unauthorized' })
-  const { id } = req.user
-  const { challenge_id } = req.params
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' })
+    const { id } = req.user
+    const { challenge_id } = req.params
 
-  const { data: user } = await supabase
-    .from('users')
-    .select('lives, last_life_lost_at')
-    .eq('id', id)
-    .single()
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('lives, last_life_lost_at')
+      .eq('id', id)
+      .single()
 
-  if (!user) return res.status(403).json({ error: 'No lives remaining' })
+    if (userError || !user) return res.status(403).json({ error: 'No lives remaining' })
 
-  const { lives } = await applyLifeRegeneration({ id, ...user })
+    const { lives } = await applyLifeRegeneration({ id, ...user })
 
-  if (lives <= 0)
-    return res.status(403).json({ error: 'No lives remaining' })
+    if (lives <= 0)
+      return res.status(403).json({ error: 'No lives remaining' })
 
-  const { data, error } = await supabase
-    .from('challenges')
-    .select('*')
-    .eq('challenge_id', challenge_id)
-    .single()
-  const { variables, alternatives, evaluated_answer, question_text } = challenge_randomizer(
-    data.variables_range, // e.g. [10, 10] → two vars, each 1–10
-    data.alternatives_options, // e.g. ["{0}+{1}", "{0}-{1}", "{0}*{1}", "{0}/{1}", "{1}-{0}"]
-    data.correct_answer,
-    data.challenge_text
-  )
+    const { data, error } = await supabase
+      .from('challenges')
+      .select('*')
+      .eq('challenge_id', challenge_id)
+      .single()
 
-  await supabase.from('current_challenges').upsert(
-    {
-      user_id: id,
-      challenge_id,
-      question_text,
-      variables,
-      alternatives,
-      correct_answer: evaluated_answer,
+    if (error || !data) return res.status(404).json({ error: 'Challenge not found' })
+
+    const { variables, alternatives, evaluated_answer, question_text } = challenge_randomizer(
+      data.variables_range, // e.g. [10, 10] → two vars, each 1–10
+      data.alternatives_options, // e.g. ["{0}+{1}", "{0}-{1}", "{0}*{1}", "{0}/{1}", "{1}-{0}"]
+      data.correct_answer,
+      data.challenge_text
+    )
+
+    await supabase.from('current_challenges').upsert(
+      {
+        user_id: id,
+        challenge_id,
+        question_text,
+        variables,
+        alternatives,
+        correct_answer: evaluated_answer,
+        title: data.title,
+        difficulty: data.difficulty,
+        gold_time_sec: data.gold_time_sec,
+        silver_time_sec: data.silver_time_sec,
+        xp_gold: data.xp_gold,
+        xp_silver: data.xp_silver,
+        xp_bronze: data.xp_bronze,
+        hint_text: data.hint_text,
+        started_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id' },
+    )
+
+    res.json({
+      challenge_id: data.challenge_id,
+      text: question_text,
+      variables: variables,
+      alternatives: alternatives,
       title: data.title,
       difficulty: data.difficulty,
       gold_time_sec: data.gold_time_sec,
@@ -65,25 +92,10 @@ export const getChallenge: RequestHandler = async (
       xp_silver: data.xp_silver,
       xp_bronze: data.xp_bronze,
       hint_text: data.hint_text,
-      started_at: new Date().toISOString(),
-    },
-    { onConflict: 'user_id' },
-  )
-
-  res.json({
-    challenge_id: data.challenge_id,
-    text: question_text,
-    variables: variables,
-    alternatives: alternatives,
-    title: data.title,
-    difficulty: data.difficulty,
-    gold_time_sec: data.gold_time_sec,
-    silver_time_sec: data.silver_time_sec,
-    xp_gold: data.xp_gold,
-    xp_silver: data.xp_silver,
-    xp_bronze: data.xp_bronze,
-    hint_text: data.hint_text,
-  })
+    })
+  } catch (error) {
+    next(error)
+  }
 }
 
 export const submitAnswer: RequestHandler = async (
@@ -95,6 +107,11 @@ export const submitAnswer: RequestHandler = async (
   if (!req.user) return res.status(401).json({ error: 'Unauthorized' })
   const { id } = req.user
   let { user_answer, hint_used } = req.body
+
+  if (typeof user_answer !== 'string' || !['a', 'b', 'c', 'd'].includes(user_answer)) {
+    return res.status(400).json({ error: 'Invalid answer' })
+  }
+
   let isEqual = true
   const { data: challengeData, error } = await supabase
     .from('current_challenges')
@@ -103,7 +120,7 @@ export const submitAnswer: RequestHandler = async (
     .eq('challenge_id', challenge_id)
     .maybeSingle()
   try {
-    if (!challengeData)
+    if (error || !challengeData)
       return res.status(404).json({ error: 'Invalid attempt' })
 
     const attempt_time = Math.floor(
@@ -182,11 +199,13 @@ export const submitAnswer: RequestHandler = async (
         streak = data ? (streak = 0) : (streak = 1)
       }
 
-      const { data: userRow } = await supabase
+      const { data: userRow, error: userRowError } = await supabase
         .from('users')
         .select('*')
         .eq('id', id)
         .single()
+
+      if (userRowError || !userRow) return res.status(404).json({ error: 'User not found' })
 
       const user = await applyLifeRegeneration(userRow)
 
@@ -204,15 +223,18 @@ export const submitAnswer: RequestHandler = async (
         .single()
 
       checkAndGrantAchievements(id)
-      return res.send({ ...userData, correct: true, medal, xp_earned })
+      const { password: _password, ...safeUserData } = userData ?? {}
+      return res.send({ ...safeUserData, correct: true, medal, xp_earned })
     } else {
       const lostLives = 1
 
-      const { data: userRow } = await supabase
+      const { data: userRow, error: userRowError } = await supabase
         .from('users')
         .select('*')
         .eq('id', id)
         .single()
+
+      if (userRowError || !userRow) return res.status(404).json({ error: 'User not found' })
 
       const user = await applyLifeRegeneration(userRow)
 
@@ -228,101 +250,88 @@ export const submitAnswer: RequestHandler = async (
         .eq('id', id)
         .select()
         .single()
-      res.send({ ...user, streak: 0, lives, last_life_lost_at, correct: false })
+      const { password: _password, ...safeUser } = user
+      res.send({ ...safeUser, streak: 0, lives, last_life_lost_at, correct: false })
     }
+  } catch (err) {
+    next(err)
   } finally {
     await supabase.from('current_challenges').delete().eq('user_id', id)
   }
 }
 
 export const createChallenge: RequestHandler = async (req, res, next) => {
-  const { topic_id } = req.params
-  const {
-    title,
-    challenge_text,
-    difficulty,
-    gold_time_sec,
-    silver_time_sec,
-    xp_gold,
-    xp_silver,
-    xp_bronze,
-    variables_range,
-    alternatives_options,
-    correct_answer,
-    hint_text,
-  } = req.body
-
-  const { data: last } = await supabase
-    .from('challenges')
-    .select('order')
-    .eq('topic_id', topic_id)
-    .order('order', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  const order = (last?.order ?? 0) + 1
-
-  const { variables, alternatives, evaluated_answer, question_text } = challenge_randomizer(
-    variables_range,
-    alternatives_options,
-    correct_answer,
-    challenge_text
-  )
-
-
-  const { data, error } = await supabase
-    .from('challenges')
-    .insert({
-      topic_id,
+  try {
+    const { topic_id } = req.params
+    const {
       title,
       challenge_text,
       difficulty,
-      order,
       gold_time_sec,
       silver_time_sec,
       xp_gold,
       xp_silver,
       xp_bronze,
       variables_range,
-      variables,
-      hint_text,
       alternatives_options,
       correct_answer,
-      alternatives,
-    })
-    .select()
-    .single()
+      hint_text,
+    } = req.body
 
-  if (error) return res.status(409).json(error)
-  res.send(data)
+    const { data: last, error: lastError } = await supabase
+      .from('challenges')
+      .select('order')
+      .eq('topic_id', topic_id)
+      .order('order', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (lastError) return res.status(500).json({ error: lastError.message })
+
+    const order = (last?.order ?? 0) + 1
+
+    const { variables, alternatives, evaluated_answer, question_text } = challenge_randomizer(
+      variables_range,
+      alternatives_options,
+      correct_answer,
+      challenge_text
+    )
+
+
+    const { data, error } = await supabase
+      .from('challenges')
+      .insert({
+        topic_id,
+        title,
+        challenge_text,
+        difficulty,
+        order,
+        gold_time_sec,
+        silver_time_sec,
+        xp_gold,
+        xp_silver,
+        xp_bronze,
+        variables_range,
+        variables,
+        hint_text,
+        alternatives_options,
+        correct_answer,
+        alternatives,
+      })
+      .select()
+      .single()
+
+    if (error) return res.status(409).json({ error: error.message })
+    res.send(data)
+  } catch (error) {
+    next(error)
+  }
 }
 
 export const updateChallenge: RequestHandler = async (req, res, next) => {
-  const { challenge_id } = req.params
-  const { title,
-    challenge_text,
-    difficulty,
-    gold_time_sec,
-    silver_time_sec,
-    xp_gold,
-    xp_silver,
-    xp_bronze,
-    variables_range,
-    alternatives_options,
-    correct_answer,
-    hint_text, } = req.body
-
-  const { variables, alternatives, evaluated_answer, question_text } = challenge_randomizer(
-    variables_range,
-    alternatives_options,
-    correct_answer,
-    challenge_text
-  )
-
-  const { data, error } = await supabase
-    .from('challenges')
-    .update({
-      title,
+  try {
+    const { challenge_id } = req.params
+    const { title,
       challenge_text,
       difficulty,
       gold_time_sec,
@@ -331,27 +340,57 @@ export const updateChallenge: RequestHandler = async (req, res, next) => {
       xp_silver,
       xp_bronze,
       variables_range,
-      variables,
-      hint_text,
       alternatives_options,
       correct_answer,
-      alternatives,
-    })
-    .eq('challenge_id', challenge_id)
-    .select()
-    .single()
-  if (error) return res.status(404).json(error)
-  res.send(data)
+      hint_text, } = req.body
+
+    const { variables, alternatives, evaluated_answer, question_text } = challenge_randomizer(
+      variables_range,
+      alternatives_options,
+      correct_answer,
+      challenge_text
+    )
+
+    const { data, error } = await supabase
+      .from('challenges')
+      .update({
+        title,
+        challenge_text,
+        difficulty,
+        gold_time_sec,
+        silver_time_sec,
+        xp_gold,
+        xp_silver,
+        xp_bronze,
+        variables_range,
+        variables,
+        hint_text,
+        alternatives_options,
+        correct_answer,
+        alternatives,
+      })
+      .eq('challenge_id', challenge_id)
+      .select()
+      .single()
+    if (error) return res.status(404).json({ error: error.message })
+    res.send(data)
+  } catch (error) {
+    next(error)
+  }
 }
 
 export const deleteChallenge: RequestHandler = async (req, res, next) => {
-  const { challenge_id } = req.params
-  const { data, error } = await supabase
-    .from('challenges')
-    .delete()
-    .eq('challenge_id', challenge_id)
-    .select()
-    .single()
-  if (error) return res.status(404).json(error)
-  res.send(data)
+  try {
+    const { challenge_id } = req.params
+    const { data, error } = await supabase
+      .from('challenges')
+      .delete()
+      .eq('challenge_id', challenge_id)
+      .select()
+      .single()
+    if (error) return res.status(404).json({ error: error.message })
+    res.send(data)
+  } catch (error) {
+    next(error)
+  }
 }

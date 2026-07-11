@@ -4,6 +4,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import './index.css'
 import { AuthContextProvider } from './context/authContext.tsx'
 import App from './App.tsx'
+import Landing from './pages/Landing.tsx'
 import Home from './pages/Home.tsx'
 import PathTopics from './pages/PathTopics.tsx'
 import TopicChallenges from './pages/TopicChallenges.tsx'
@@ -28,8 +29,10 @@ const router = createBrowserRouter([
     path: '/',
     element: <App />,
     children: [
+      { index: true, element: <Landing /> },
+      { path: 'menu', element: <Home /> },
+
       // Paths -> Topics -> Challenges (GET /paths, /paths/:path_id/topics, /topics/:topic_id/challenges)
-      { index: true, element: <Home /> },
       { path: 'paths', element: <Paths /> },
       { path: 'paths/:pathId', element: <PathTopics /> },
       { path: 'topics/:topicId', element: <TopicChallenges /> },

@@ -23,11 +23,23 @@ const difficultyStyles: Record<string, { color: string; label: string }> = {
   hard: { color: "#fb7185", label: "Hard" },
 }
 
+const medalStyles: Record<string, { color: string; label: string; icon: string }> = {
+  gold: { color: "#fbbf24", label: "Gold", icon: "🥇" },
+  silver: { color: "#cbd5e1", label: "Silver", icon: "🥈" },
+  bronze: { color: "#fb923c", label: "Bronze", icon: "🥉" },
+}
+
+interface Attempt {
+  challenge_id: string
+  medal_earned: "gold" | "silver" | "bronze"
+}
+
 function TopicChallenges() {
   const { topicId } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
   const [challenges, setChallenges] = useState<Challenge[]>([])
+  const [medalsByChallenge, setMedalsByChallenge] = useState<Record<string, Attempt["medal_earned"]>>({})
 
   useEffect(() => {
     const getChallenges = async () => {
@@ -40,6 +52,26 @@ function TopicChallenges() {
     }
     getChallenges()
   }, [topicId])
+
+  useEffect(() => {
+    if (!user) return
+    const getUserAttempts = async () => {
+      try {
+        const token = localStorage.getItem("token")
+        const { data } = await axios.get<Attempt[]>("/mathly/user-attempts", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const medals = data.reduce((acc, attempt) => {
+          acc[attempt.challenge_id] = attempt.medal_earned
+          return acc
+        }, {} as Record<string, Attempt["medal_earned"]>)
+        setMedalsByChallenge(medals)
+      } catch (error) {
+        console.log(error)
+      }
+    }
+    getUserAttempts()
+  }, [user])
 
   return (
     <div className="min-h-screen bg-scene text-slate-200 antialiased font-body">
@@ -121,6 +153,8 @@ function TopicChallenges() {
               color: "#22d3ee",
               label: challenge.difficulty,
             }
+            const medal = medalsByChallenge[challenge.challenge_id]
+            const medalStyle = medal ? medalStyles[medal] : undefined
             return (
               <div
                 key={challenge.challenge_id}
@@ -160,8 +194,23 @@ function TopicChallenges() {
 
                 {/* Body */}
                 <div className="flex-1 min-w-0">
-                  <h2 className="font-display font-bold text-base md:text-lg text-slate-100 group-hover:text-[color:var(--pc)] transition-colors">
+                  <h2
+                    className={`font-display font-bold text-base md:text-lg transition-colors flex items-center gap-2 ${
+                      medalStyle ? "" : "text-slate-100 group-hover:text-[color:var(--pc)]"
+                    }`}
+                    style={medalStyle ? { color: medalStyle.color } : undefined}
+                  >
                     {challenge.title}
+                    {medalStyle && (
+                      <span
+                        title={`${medalStyle.label} medal earned`}
+                        className="inline-flex items-center gap-1 font-data text-[10px] font-bold uppercase tracking-wide"
+                        style={{ color: medalStyle.color }}
+                      >
+                        <span aria-hidden="true">{medalStyle.icon}</span>
+                        {medalStyle.label}
+                      </span>
+                    )}
                   </h2>
                   <p className="mt-0.5 text-xs md:text-sm text-slate-500 line-clamp-2">
                     {label} · Gold ≤{challenge.gold_time_sec}s · Silver ≤{challenge.silver_time_sec}s

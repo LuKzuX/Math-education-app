@@ -1,5 +1,19 @@
 import multer from "multer"
 
+const ALLOWED_MIME_TYPES = new Set([
+    'image/png',
+    'image/jpeg',
+    'image/webp',
+    'image/svg+xml',
+])
+
 export const upload = multer({
-    storage: multer.memoryStorage()
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
+            return cb(new Error('Unsupported file type'))
+        }
+        cb(null, true)
+    },
 })

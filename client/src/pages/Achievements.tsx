@@ -77,7 +77,7 @@ function Achievements() {
       <main className="w-full max-w-4xl mx-auto px-4 sm:px-6 md:px-8 py-6 sm:py-8 md:py-12">
         {/* Back link */}
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/menu")}
           className="inline-block font-data text-[11px] tracking-[0.25em] uppercase text-slate-500 hover:text-cyan-400 transition-colors mb-6"
         >
           « Main menu

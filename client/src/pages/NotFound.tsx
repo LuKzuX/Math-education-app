@@ -33,7 +33,7 @@ function NotFound() {
           This path doesn't exist, or you've taken a wrong turn.
         </p>
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/menu")}
           className="font-data text-[12px] tracking-widest uppercase text-slate-950 bg-cyan-400
                      rounded-lg px-5 py-2.5 hover:bg-cyan-300 transition-colors"
         >

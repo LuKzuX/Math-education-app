@@ -5,6 +5,7 @@ import * as FaIcons from 'react-icons/fa';
 import * as MdIcons from 'react-icons/md';
 import * as HiIcons from 'react-icons/hi';
 import * as BiIcons from 'react-icons/bi';
+import * as TbIcons from 'react-icons/tb';
 
 interface Topic {
   topic_id: string
@@ -26,6 +27,7 @@ function AdminTopics() {
     md: MdIcons,
     hi: HiIcons,
     bi: BiIcons,
+    tb: TbIcons
   };
 
   const [selectedIcon, setSelectedIcon] = useState("")
@@ -44,7 +46,10 @@ function AdminTopics() {
   }
 
   useEffect(() => {
-    fetchTopics()
+    const loadTopics = async () => {
+      await fetchTopics()
+    }
+    loadTopics()
   }, [pathId])
 
   const handleSubmit = async () => {
@@ -158,8 +163,8 @@ function AdminTopics() {
                         setTopicIcon(iconName);
                       }}
                       className={`p-2.5 rounded-lg border flex items-center justify-center transition-colors ${isSelected
-                          ? 'border-cyan-400 bg-cyan-400/10 text-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.25)]'
-                          : 'border-slate-700 text-slate-500 hover:border-slate-500 hover:text-slate-300'
+                        ? 'border-cyan-400 bg-cyan-400/10 text-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.25)]'
+                        : 'border-slate-700 text-slate-500 hover:border-slate-500 hover:text-slate-300'
                         }`}
                     >
                       <IconComponent size={20} />

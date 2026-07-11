@@ -94,9 +94,24 @@ function AdminChallenges() {
           })
 
       console.log(isEditMode ? "Challenge updated:" : "Challenge created:", response.data);
-      if (isEditMode) navigate(`/admin/topics/${topicId}/challenges`)
+      if (isEditMode) navigate(`/topics/${topicId}`)
     } catch (error) {
       console.log(isEditMode ? "Failed to update challenge:" : "Failed to create challenge:", error);
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!challengeId) return
+    if (!window.confirm("Delete this challenge? This cannot be undone.")) return
+
+    try {
+      const token = localStorage.getItem('token')
+      await axios.delete(`/mathly/challenges/${challengeId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      navigate(`/topics/${topicId}`)
+    } catch (error) {
+      console.log("Failed to delete challenge:", error);
     }
   }
   const letters = ['a', 'b', 'c', 'd']
@@ -385,12 +400,22 @@ function AdminChallenges() {
             />
           </div>
 
-          <button
-            onClick={handleSubmit}
-            className="w-full sm:w-auto mt-2 px-6 py-2.5 rounded-lg bg-cyan-400 text-[#0a0f1e] text-sm font-semibold font-['Space_Grotesk'] tracking-wide hover:bg-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/60 focus:ring-offset-2 focus:ring-offset-[#0f1629] transition-colors"
-          >
-            {isEditMode ? "Save changes" : "Create challenge"}
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3 mt-2">
+            <button
+              onClick={handleSubmit}
+              className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-cyan-400 text-[#0a0f1e] text-sm font-semibold font-['Space_Grotesk'] tracking-wide hover:bg-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/60 focus:ring-offset-2 focus:ring-offset-[#0f1629] transition-colors"
+            >
+              {isEditMode ? "Save changes" : "Create challenge"}
+            </button>
+            {isEditMode && (
+              <button
+                onClick={handleDelete}
+                className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-transparent border border-red-500/50 text-red-400 text-sm font-semibold font-['Space_Grotesk'] tracking-wide hover:bg-red-500/10 hover:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-400/60 focus:ring-offset-2 focus:ring-offset-[#0f1629] transition-colors"
+              >
+                Delete challenge
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

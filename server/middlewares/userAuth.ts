@@ -1,5 +1,7 @@
 import jwt, { JwtPayload } from 'jsonwebtoken'
 import { RequestHandler } from 'express'
+import dotenv from 'dotenv'
+dotenv.config()
 
 export const userAuth: RequestHandler = (req, res, next) => {
   const { authorization } = req.headers
@@ -8,12 +10,18 @@ export const userAuth: RequestHandler = (req, res, next) => {
   }
 
   const token = authorization.split(' ')[1]
+  if (!token) {
+    return res.status(401).json({ message: 'Unauthorized' })
+  }
+
+  const JWT_SECRET = process.env.JWT_SECRET
+  if (!JWT_SECRET) {
+    console.error('JWT_SECRET environment variable is not set')
+    return res.status(500).json({ message: 'Internal server error' })
+  }
 
   try {
-    const verified = jwt.verify(
-      token,
-      process.env.JWT_SECRET || 'fallback-jwt-secret-key-for-development',
-    ) as JwtPayload
+    const verified = jwt.verify(token, JWT_SECRET) as JwtPayload
 
     (req as any).user = {
       id: verified.id,

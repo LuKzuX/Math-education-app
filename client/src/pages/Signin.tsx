@@ -17,7 +17,7 @@ function Signin() {
     setError(null)
     try {
       await login(email, password)
-      navigation('/')
+      navigation('/menu')
     } catch {
       setError('Invalid email or password')
     } finally {

@@ -7,6 +7,8 @@ import crypto from 'crypto'
 import { Resend } from 'resend'
 import { RequestHandler } from 'express'
 import { AuthRequest } from '../types/AuthRequest'
+import { buildStorageFileName } from '../utils/storageFileName'
+import { buildVerifyEmail, buildResetPasswordEmail } from '../utils/emailTemplates'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -22,67 +24,94 @@ export const getUser: RequestHandler = async (req: AuthRequest, res, next) => {
       .eq('id', req.user.id)
       .single()
     if (error) return res.status(500).json({ message: error.message })
-    res.json(data)
+    if (!data) return res.status(404).json({ message: 'User not found' })
+    const { password: _password, ...safeData } = data
+    res.json(safeData)
   } catch (error) {
-    res.send(error)
+    next(error)
   }
 }
 
 export const updateUser: RequestHandler = async (req: AuthRequest, res, next) => {
-  const user_id = req.user?.id
-  if (!user_id) return res.status(401).json({ message: 'Unauthorized' });
-  const { username, email, profile_picture } = req.body
-  if (email) {
-    const { data: emailFound, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', email)
-      .neq('id', user_id)
-    if ((emailFound?.length ?? 0) >= 1) {
-      return res.status(409).json({ message: 'This email already exists' })
+  try {
+    const user_id = req.user?.id
+    if (!user_id) return res.status(401).json({ message: 'Unauthorized' });
+    const { username, email } = req.body
+    const file = req.file
+
+    let avatar_url: string | undefined
+    if (file) {
+      const fileName = buildStorageFileName(file.originalname)
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file.buffer, { contentType: file.mimetype })
+      if (uploadError) return res.status(500).json({ message: uploadError.message })
+
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(fileName)
+      avatar_url = publicUrl
     }
 
-    const token = crypto.randomBytes(32).toString('hex')
-    const expires = new Date(Date.now() + 1000 * 60 * 60);
-    const verifyLink = `${process.env.CLIENT_URL}verify-email?token=${token}`
+    if (email) {
+      const { data: emailFound, error } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', email)
+        .neq('id', user_id)
+      if (error) return res.status(500).json({ message: error.message })
+      if ((emailFound?.length ?? 0) >= 1) {
+        return res.status(409).json({ message: 'This email already exists' })
+      }
 
-    await supabase.from('password_reset_tokens').insert({
-      user_id: user_id,
-      token,
-      expires_at: expires.toISOString(),
-    });
+      const token = crypto.randomBytes(32).toString('hex')
+      const expires = new Date(Date.now() + 1000 * 60 * 60);
+      const verifyLink = `${process.env.CLIENT_URL}verify-email?token=${token}`
 
-    await resend.emails.send({
-      from: 'App <onboarding@resend.dev>',
-      to: email,
-      subject: 'Verify your email',
-      html: `<p>Click <a href="${verifyLink}">here</a> to verify your account.</p>`,
-    })
+      await supabase.from('password_reset_tokens').insert({
+        user_id: user_id,
+        token,
+        expires_at: expires.toISOString(),
+      });
+
+      const { html, text } = buildVerifyEmail({ verifyLink, expiresInText: '1 hour' })
+      await resend.emails.send({
+        from: 'Mathly <onboarding@resend.dev>',
+        to: email,
+        subject: 'Verify your new email address',
+        html,
+        text,
+      })
+    }
+
+    const updates = Object.fromEntries(
+      Object.entries({ username, email, avatar_url }).filter(([_, v]) => v !== undefined)
+    );
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ message: 'Nothing to update' });
+    }
+
+    const { error: err } = await supabase.from('users').update(updates).eq('id', user_id);
+    if (err) return res.status(500).json({ message: err.message })
+
+    res.status(200).json({ message: 'User updated successfully', ...updates });
+  } catch (error) {
+    next(error)
   }
-
-  const updates = Object.fromEntries(
-    Object.entries({ username, email, avatar_url: profile_picture }).filter(([_, v]) => v !== undefined)
-  );
-
-  if (Object.keys(updates).length === 0) {
-    return res.status(400).json({ message: 'Nothing to update' });
-  }
-
-  const { error: err } = await supabase.from('users').update(updates).eq('id', user_id);
-  if (err) return next(err);
-
-  res.status(200).json({ message: 'User updated successfully' });
-
 }
 
 export const getUserAttempts: RequestHandler = async (req: AuthRequest, res, next) => {
-  if (!req.user) return res.status(401).json({ error: "Unauthorized" })
-  const { id } = req.user
-  const { data, error } = await supabase
-    .from("attempts")
-    .select("*")
-    .eq('user_id', id)
-  res.json(data)
+  try {
+    if (!req.user) return res.status(401).json({ error: "Unauthorized" })
+    const { id } = req.user
+    const { data, error } = await supabase
+      .from("attempts")
+      .select("*")
+      .eq('user_id', id)
+    if (error) return res.status(500).json({ error: error.message })
+    res.json(data)
+  } catch (error) {
+    next(error)
+  }
 }
 
 export const getUserAchievments: RequestHandler = async (req: AuthRequest, res, next) => {
@@ -102,68 +131,85 @@ export const getUserAchievments: RequestHandler = async (req: AuthRequest, res, 
 }
 
 export const signup: RequestHandler = async (req, res, next) => {
-  const { username, email, password } = req.body
+  try {
+    const { username, email, password } = req.body
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: 'username, email and password are required' })
+    }
 
-  const { data: emailFound, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('email', email)
+    const { data: emailFound, error } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
 
-  if ((emailFound?.length ?? 0) >= 1) {
-    return res.status(409).json({ message: 'This email already exists' })
-  }
-  const hashedPassword = await bcrypt.hash(password, 10)
-  const token = crypto.randomBytes(32).toString('hex')
-  const expires = new Date(Date.now() + 24 * 60 * 60 * 1000)
+    if (error) return res.status(500).json({ message: error.message })
+    if ((emailFound?.length ?? 0) >= 1) {
+      return res.status(409).json({ message: 'This email already exists' })
+    }
+    const hashedPassword = await bcrypt.hash(password, 10)
+    const token = crypto.randomBytes(32).toString('hex')
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000)
 
-  const { data: profile, error: profileError } = await supabase
-    .from('pending_users')
-    .insert({
-      username,
-      email,
-      password: hashedPassword,
-      token,
-      expires_at: expires,
+    const { data: profile, error: profileError } = await supabase
+      .from('pending_users')
+      .insert({
+        username,
+        email,
+        password: hashedPassword,
+        token,
+        expires_at: expires,
+      })
+
+    if (profileError) {
+      return res.status(500).json({ message: profileError.message })
+    }
+
+    const verifyLink = `${process.env.CLIENT_URL}verify-email?token=${token}`
+    const { html, text } = buildVerifyEmail({ verifyLink, username, expiresInText: '24 hours' })
+    await resend.emails.send({
+      from: 'Mathly <onboarding@resend.dev>',
+      to: email,
+      subject: 'Confirm your Mathly account',
+      html,
+      text,
     })
 
-  if (profileError) {
-    return res.status(500).json({ message: profileError })
+    res
+      .status(200)
+      .json({ message: 'Check your email to confirm your account.' })
+  } catch (error) {
+    next(error)
   }
-
-  const verifyLink = `${process.env.CLIENT_URL}verify-email?token=${token}`
-  await resend.emails.send({
-    from: 'App <onboarding@resend.dev>',
-    to: email,
-    subject: 'Verify your email',
-    html: `<p>Click <a href="${verifyLink}">here</a> to verify your account.</p>`,
-  })
-
-  res
-    .status(200)
-    .json({ message: 'Check your email to confirm your account.', token })
 }
 
 export const verifyEmail: RequestHandler = async (req, res, next) => {
-  const token = req.query.token as string
+  try {
+    const token = req.query.token as string
+    if (!token) return res.status(400).json({ message: 'Invalid or expired token.' })
 
-  const { data: pending } = await supabase
-    .from('pending_users')
-    .select('*')
-    .eq('token', token)
-    .gt('expires_at', new Date().toISOString())
-    .single()
+    const { data: pending, error } = await supabase
+      .from('pending_users')
+      .select('*')
+      .eq('token', token)
+      .gt('expires_at', new Date().toISOString())
+      .single()
 
-  if (!pending)
-    return res.status(400).json({ message: 'Invalid or expired token.' })
+    if (error || !pending)
+      return res.status(400).json({ message: 'Invalid or expired token.' })
 
-  await supabase.from('users').insert({
-    username: pending.username,
-    email: pending.email,
-    password: pending.password,
-  })
-  await supabase.from('pending_users').delete().eq('token', token)
+    const { error: insertError } = await supabase.from('users').insert({
+      username: pending.username,
+      email: pending.email,
+      password: pending.password,
+    })
+    if (insertError) return res.status(500).json({ message: insertError.message })
 
-  res.json({ message: 'Email verified. You can now log in.' })
+    await supabase.from('pending_users').delete().eq('token', token)
+
+    res.json({ message: 'Email verified. You can now log in.' })
+  } catch (error) {
+    next(error)
+  }
 }
 
 export const signin: RequestHandler = async (req, res, next) => {
@@ -198,27 +244,30 @@ export const signin: RequestHandler = async (req, res, next) => {
       token,
       user: safeProfile,
     })
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Internal server error'
-    res.status(500).json({ message })
+  } catch (error) {
+    next(error)
   }
 }
 
 export const forgotPassword: RequestHandler = async (req, res, next) => {
   try {
     const { email } = req.body
-    const token = crypto.randomBytes(32).toString('hex')
-    const verifyLink = `${process.env.CLIENT_URL}password-reset?token=${token}`
+    const genericResponse = {
+      message: 'If an account with that email exists, a reset link has been sent.',
+    }
 
     const { data: user } = await supabase
       .from('users')
       .select('*')
       .eq('email', email)
-      .single()
+      .maybeSingle()
 
     if (!user) {
-      return res.status(404).json({ message: 'Email not found' })
+      return res.status(200).json(genericResponse)
     }
+
+    const token = crypto.randomBytes(32).toString('hex')
+    const resetLink = `${process.env.CLIENT_URL}password-reset?token=${token}`
 
     await supabase.from('password_reset_tokens').insert({
       user_id: user.id,
@@ -226,24 +275,28 @@ export const forgotPassword: RequestHandler = async (req, res, next) => {
       expires_at: new Date(Date.now() + 1000 * 60 * 60).toISOString(), // 1 hour
     })
 
+    const { html, text } = buildResetPasswordEmail({ resetLink, username: user.username, expiresInText: '1 hour' })
     await resend.emails.send({
-      from: 'App <onboarding@resend.dev>',
+      from: 'Mathly <onboarding@resend.dev>',
       to: email,
-      subject: 'Password reset',
-      html: `<p>Click <a href="${verifyLink}">here</a> to verify your account.</p>`,
+      subject: 'Reset your Mathly password',
+      html,
+      text,
     })
 
-    res
-      .status(200)
-      .json({ message: 'Check your email to reset your password', token })
+    res.status(200).json(genericResponse)
   } catch (error) {
-    res.send(error)
+    next(error)
   }
 }
 
 export const resetPassword: RequestHandler = async (req, res, next) => {
   const token = req.query.token as string
   const { newPassword } = req.body
+
+  if (!token || !newPassword || typeof newPassword !== 'string') {
+    return res.status(400).json({ message: 'Token and new password are required' })
+  }
 
   try {
     const newHashedPassword = await bcrypt.hash(newPassword, 10)
@@ -270,9 +323,8 @@ export const resetPassword: RequestHandler = async (req, res, next) => {
     await supabase.from('password_reset_tokens').delete().eq('token', token)
 
     res.status(200).json({ message: 'Password updated successfully' })
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Internal server error'
-    res.json({ message })
+  } catch (error) {
+    next(error)
   }
 }
 
