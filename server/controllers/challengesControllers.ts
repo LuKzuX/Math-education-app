@@ -13,7 +13,10 @@ export const getChallenges: RequestHandler = async (req, res, next) => {
       .from('challenges')
       .select('*')
       .eq('topic_id', topic_id)
-    if (error) return res.status(500).json({ error: error.message })
+    if (error) {
+      console.error('getChallenges error:', error)
+      return res.status(500).json({ error: 'Failed to fetch challenges' })
+    }
     res.send(data)
   } catch (error) {
     next(error)
@@ -286,7 +289,10 @@ export const createChallenge: RequestHandler = async (req, res, next) => {
       .limit(1)
       .maybeSingle()
 
-    if (lastError) return res.status(500).json({ error: lastError.message })
+    if (lastError) {
+      console.error('createChallenge order lookup error:', lastError)
+      return res.status(500).json({ error: 'Failed to create challenge' })
+    }
 
     const order = (last?.order ?? 0) + 1
 
@@ -321,7 +327,10 @@ export const createChallenge: RequestHandler = async (req, res, next) => {
       .select()
       .single()
 
-    if (error) return res.status(409).json({ error: error.message })
+    if (error) {
+      console.error('createChallenge insert error:', error)
+      return res.status(409).json({ error: 'Failed to create challenge' })
+    }
     res.send(data)
   } catch (error) {
     next(error)
@@ -372,7 +381,10 @@ export const updateChallenge: RequestHandler = async (req, res, next) => {
       .eq('challenge_id', challenge_id)
       .select()
       .single()
-    if (error) return res.status(404).json({ error: error.message })
+    if (error) {
+      console.error('updateChallenge error:', error)
+      return res.status(404).json({ error: 'Failed to update challenge' })
+    }
     res.send(data)
   } catch (error) {
     next(error)
@@ -388,7 +400,10 @@ export const deleteChallenge: RequestHandler = async (req, res, next) => {
       .eq('challenge_id', challenge_id)
       .select()
       .single()
-    if (error) return res.status(404).json({ error: error.message })
+    if (error) {
+      console.error('deleteChallenge error:', error)
+      return res.status(404).json({ error: 'Failed to delete challenge' })
+    }
     res.send(data)
   } catch (error) {
     next(error)

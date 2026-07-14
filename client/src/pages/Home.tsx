@@ -2,17 +2,38 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { useAuth } from '../context/authContext'
-import { FaFire, FaHeart, FaMap, FaTrophy, FaMedal, FaUser } from 'react-icons/fa6'
+import { FaFire, FaHeart, FaMap, FaTrophy, FaMedal, FaUser, FaStar, FaTriangleExclamation } from 'react-icons/fa6'
 
 interface UserStats {
   username: string
   total_xp: number
   streak: number
   lives: number
+  user_level?: number
+  avatar_url?: string | null
+}
+
+// Mirrors server/utils/calculateUserLevel.ts so we can show progress toward the next level.
+const XP_THRESHOLDS = [
+  30, 50, 70, 100, 150, 210, 280, 360, 450, 550,
+  700, 880, 1090, 1330, 1600, 1900, 2230, 2590, 2980, 3400,
+  3850, 4330, 4840, 5380, 5950, 6550, 7180, 7840, 8530, 9250, 10000,
+]
+
+function getLevelProgress(totalXp: number) {
+  const prevThreshold = [0, ...XP_THRESHOLDS][
+    XP_THRESHOLDS.filter((t) => totalXp >= t).length
+  ] ?? 0
+  const nextThreshold = XP_THRESHOLDS.find((t) => totalXp < t)
+  if (nextThreshold === undefined) return { pct: 100, xpIntoLevel: totalXp - prevThreshold, xpForLevel: 0, maxed: true }
+  const xpForLevel = nextThreshold - prevThreshold
+  const xpIntoLevel = totalXp - prevThreshold
+  return { pct: Math.min(100, Math.round((xpIntoLevel / xpForLevel) * 100)), xpIntoLevel, xpForLevel, maxed: false }
 }
 
 function Home() {
   const [stats, setStats] = useState<UserStats | null>(null)
+  const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
   const { user } = useAuth()
 
@@ -24,12 +45,17 @@ function Home() {
           headers: { Authorization: `Bearer ${token}` },
         })
         setStats(data)
-      } catch (error) {
-        console.log(error)
+      } catch {
+        // ignore
+      } finally {
+        setLoading(false)
       }
     }
     getUser()
   }, [])
+
+  const progress = getLevelProgress(stats?.total_xp ?? 0)
+  const outOfLives = !loading && (stats?.lives ?? 0) <= 0
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 text-slate-200 antialiased font-body">
@@ -48,6 +74,8 @@ function Home() {
             radial-gradient(800px 300px at 85% -10%, rgba(26,18,58,.2) 0%, transparent 70%),
             #020617;
         }
+        @keyframes pulse-bg { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        .skeleton { animation: pulse-bg 1.4s ease-in-out infinite; }
       `}</style>
 
       <div className="bg-scene min-h-screen flex flex-col">
@@ -57,23 +85,43 @@ function Home() {
             Math<span className="text-cyan-400">ly</span>
           </div>
 
-          <div className="flex gap-4 sm:gap-7">
+          <div className="flex items-center gap-4 sm:gap-7">
+            <div className="flex items-baseline gap-2">
+              <span className="hidden sm:inline text-[10px] font-medium uppercase tracking-widest text-slate-600">Level</span>
+              <span className="font-data font-bold text-sm tabular-nums text-violet-400 inline-flex items-center gap-1.5">
+                <FaStar className="w-3.5 h-3.5" /> {loading ? '—' : stats?.user_level ?? 0}
+              </span>
+            </div>
             <div className="flex items-baseline gap-2">
               <span className="hidden sm:inline text-[10px] font-medium uppercase tracking-widest text-slate-600">XP</span>
-              <span className="font-data font-bold text-sm tabular-nums text-cyan-400">{(stats?.total_xp ?? 0).toLocaleString()}</span>
+              <span className="font-data font-bold text-sm tabular-nums text-cyan-400">
+                {loading ? '—' : (stats?.total_xp ?? 0).toLocaleString()}
+              </span>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="hidden sm:inline text-[10px] font-medium uppercase tracking-widest text-slate-600">Streak</span>
               <span className="font-data font-bold text-sm tabular-nums text-orange-400 inline-flex items-center gap-1.5">
-                <FaFire className="w-3.5 h-3.5" /> {stats?.streak ?? 0}
+                <FaFire className="w-3.5 h-3.5" /> {loading ? '—' : stats?.streak ?? 0}
               </span>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="hidden sm:inline text-[10px] font-medium uppercase tracking-widest text-slate-600">Lives</span>
-              <span className="font-data font-bold text-sm tabular-nums text-rose-400 inline-flex items-center gap-1.5">
-                <FaHeart className="w-3.5 h-3.5" /> {stats?.lives ?? 0}
+              <span className={`font-data font-bold text-sm tabular-nums inline-flex items-center gap-1.5 ${outOfLives ? 'text-rose-500' : 'text-rose-400'}`}>
+                <FaHeart className="w-3.5 h-3.5" /> {loading ? '—' : stats?.lives ?? 0}
               </span>
             </div>
+            <button
+              type="button"
+              onClick={() => navigate('/profile')}
+              className="shrink-0 w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center bg-rose-400/10 border border-rose-400/30 overflow-hidden hover:border-rose-400 transition-colors"
+              title="Go to profile"
+            >
+              {stats?.avatar_url ? (
+                <img src={stats.avatar_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <FaUser className="w-3.5 h-3.5 md:w-4 md:h-4 text-rose-400" />
+              )}
+            </button>
           </div>
         </header>
 
@@ -91,6 +139,36 @@ function Home() {
             <p className="mt-2 md:mt-3 text-slate-400 text-sm md:text-[15px]">
               Pick up where you left off, or check your standings.
             </p>
+
+            {/* Level progress */}
+            {!loading && stats && (
+              <div className="mt-5 md:mt-6 max-w-sm">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-data text-[11px] font-bold uppercase tracking-widest text-violet-400">
+                    Level {stats.user_level ?? 0}
+                  </span>
+                  <span className="font-data text-[11px] text-slate-500 tabular-nums">
+                    {progress.maxed ? 'Max level' : `${progress.xpIntoLevel} / ${progress.xpForLevel} XP`}
+                  </span>
+                </div>
+                <div className="h-2 rounded-full bg-slate-800 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-violet-500 to-violet-300 transition-all duration-500"
+                    style={{ width: `${progress.pct}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Out of lives warning */}
+            {outOfLives && (
+              <div className="mt-5 md:mt-6 max-w-lg flex items-start gap-2.5 rounded-lg border border-rose-900/60 bg-rose-950/30 px-4 py-3">
+                <FaTriangleExclamation className="w-4 h-4 mt-0.5 shrink-0 text-rose-400" />
+                <p className="text-[13px] text-rose-300">
+                  You're out of lives. Wait for them to refill, or keep practicing to earn more.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Tiles */}
@@ -107,7 +185,7 @@ function Home() {
               <h2 className="font-display font-bold text-lg md:text-xl tracking-tight">Paths</h2>
               <p className="text-[13px] text-slate-400">Choose a track and climb its skill tree.</p>
               <span className="font-data text-[11px] font-bold uppercase tracking-widest text-cyan-400 mt-2 md:mt-3 md:opacity-0 md:-translate-x-1.5 transition duration-200 group-hover:opacity-100 group-hover:translate-x-0 group-focus-visible:opacity-100 group-focus-visible:translate-x-0 motion-reduce:transition-none">
-                Enter {">"} 
+                Enter {">"}
               </span>
             </button>
 
@@ -122,7 +200,7 @@ function Home() {
               <h2 className="font-display font-bold text-lg md:text-xl tracking-tight">Leaderboard</h2>
               <p className="text-[13px] text-slate-400">View top users.</p>
               <span className="font-data text-[11px] font-bold uppercase tracking-widest text-amber-300 mt-2 md:mt-3 md:opacity-0 md:-translate-x-1.5 transition duration-200 group-hover:opacity-100 group-hover:translate-x-0 group-focus-visible:opacity-100 group-focus-visible:translate-x-0 motion-reduce:transition-none">
-                Enter {">"} 
+                Enter {">"}
               </span>
             </button>
 
@@ -137,7 +215,7 @@ function Home() {
               <h2 className="font-display font-bold text-lg md:text-xl tracking-tight">Achievements</h2>
               <p className="text-[13px] text-slate-400">Medals and milestones.</p>
               <span className="font-data text-[11px] font-bold uppercase tracking-widest text-violet-400 mt-2 md:mt-3 md:opacity-0 md:-translate-x-1.5 transition duration-200 group-hover:opacity-100 group-hover:translate-x-0 group-focus-visible:opacity-100 group-focus-visible:translate-x-0 motion-reduce:transition-none">
-                Enter {">"} 
+                Enter {">"}
               </span>
             </button>
 
@@ -152,7 +230,7 @@ function Home() {
               <h2 className="font-display font-bold text-lg md:text-xl tracking-tight">Profile</h2>
               <p className="text-[13px] text-slate-400">Your stats and settings.</p>
               <span className="font-data text-[11px] font-bold uppercase tracking-widest text-rose-400 mt-2 md:mt-3 md:opacity-0 md:-translate-x-1.5 transition duration-200 group-hover:opacity-100 group-hover:translate-x-0 group-focus-visible:opacity-100 group-focus-visible:translate-x-0 motion-reduce:transition-none">
-                Enter {">"} 
+                Enter {">"}
               </span>
             </button>
           </div>

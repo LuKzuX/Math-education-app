@@ -5,6 +5,7 @@ import { config } from 'dotenv';
 import { AuthRequest } from './types/AuthRequest'
 import { supabase } from './db/connection';
 import { userAuth } from './middlewares/userAuth';
+import { getClientUrl } from './utils/clientUrl';
 import Stripe from "stripe";
 
 config();
@@ -50,8 +51,8 @@ app.post('/mathly/checkout', userAuth, async (req: AuthRequest, res) => {
       }
     ],
     mode: 'subscription',
-    success_url: `${process.env.CLIENT_URL}checkout-complete?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.CLIENT_URL}checkout-cancel`
+    success_url: `${getClientUrl()}checkout-complete?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${getClientUrl()}checkout-cancel`
   })
   if (!session.url) {
     return res.status(500).send('Failed to create checkout session');
@@ -75,7 +76,7 @@ app.get('/mathly/portal', userAuth, async (req: AuthRequest, res) => {
 
   const portalSection = await stripe.billingPortal.sessions.create({
     customer: customerId,
-    return_url: `${process.env.CLIENT_URL}/`,
+    return_url: `${getClientUrl()}`,
   })
 
   res.redirect(portalSection.url)

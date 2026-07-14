@@ -19,7 +19,10 @@ export const createTopic: RequestHandler = async (req, res, next) => {
       .limit(1)
       .maybeSingle()
 
-    if (lastError) return res.status(500).json({ error: lastError.message })
+    if (lastError) {
+      console.error('createTopic order lookup error:', lastError)
+      return res.status(500).json({ error: 'Failed to create topic' })
+    }
 
     const order = (last?.order ?? 0) + 1
     const { data, error } = await supabase
@@ -35,7 +38,10 @@ export const createTopic: RequestHandler = async (req, res, next) => {
       .select()
       .single()
 
-    if (error) return res.status(409).json({ error: error.message })
+    if (error) {
+      console.error('createTopic insert error:', error)
+      return res.status(409).json({ error: 'Failed to create topic' })
+    }
     res.send(data)
   } catch (error) {
     next(error)
@@ -49,7 +55,10 @@ export const getTopics: RequestHandler = async (req, res, next) => {
       .from('topics')
       .select('*')
       .eq('path_id', path_id)
-    if (error) return res.status(500).json({ error: error.message })
+    if (error) {
+      console.error('getTopics error:', error)
+      return res.status(500).json({ error: 'Failed to fetch topics' })
+    }
     res.send(data)
   } catch (error) {
     next(error)
@@ -64,7 +73,10 @@ export const updateTopic: RequestHandler = async (req, res, next) => {
     if (file) {
       const fileName = buildStorageFileName(file.originalname)
       const { error: uploadError } = await supabase.storage.from('topic_icons').upload(fileName, file.buffer, { contentType: file.mimetype })
-      if (uploadError) return res.status(500).json({ error: uploadError.message })
+      if (uploadError) {
+        console.error('Topic icon upload error:', uploadError)
+        return res.status(500).json({ error: 'Failed to upload topic icon' })
+      }
       const { data: { publicUrl } } = supabase.storage.from('topic_icons').getPublicUrl(fileName)
       req.body.topic_icon = publicUrl
     }
@@ -80,7 +92,10 @@ export const updateTopic: RequestHandler = async (req, res, next) => {
       .select()
       .single()
 
-    if (error) return res.status(409).json({ error: error.message })
+    if (error) {
+      console.error('updateTopic error:', error)
+      return res.status(409).json({ error: 'Failed to update topic' })
+    }
     res.send(data)
   } catch (error) {
     next(error)
@@ -91,7 +106,10 @@ export const deleteTopic: RequestHandler = async (req, res, next) => {
   try {
     const { topic_id } = req.params
     const { error } = await supabase.from('topics').delete().eq('topic_id', topic_id)
-    if (error) return res.status(409).json({ error: error.message })
+    if (error) {
+      console.error('deleteTopic error:', error)
+      return res.status(409).json({ error: 'Failed to delete topic' })
+    }
     res.sendStatus(204)
   } catch (error) {
     next(error)
@@ -109,14 +127,20 @@ export const getTopicMedals: RequestHandler = async (req: AuthRequest, res, next
       .select('challenge_id')
       .eq('topic_id', topic_id)
 
-    if (challengeError) return res.status(500).json({ error: challengeError.message })
+    if (challengeError) {
+      console.error('getTopicMedals challenge lookup error:', challengeError)
+      return res.status(500).json({ error: 'Failed to fetch topic medals' })
+    }
 
     const { data, error } = await supabase
       .from('attempts').select('medal_earned')
       .eq('user_id', user_id)
       .in('challenge_id', challenge?.map(c => c.challenge_id) ?? [])
 
-    if (error) return res.status(500).json({ error: error.message })
+    if (error) {
+      console.error('getTopicMedals attempts lookup error:', error)
+      return res.status(500).json({ error: 'Failed to fetch topic medals' })
+    }
     res.send(data)
   } catch (error) {
     next(error)

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from 'react'
 import axios from 'axios'
+import { hashPassword } from '../utils/hashPassword'
 
 interface User {
     id: string
@@ -27,7 +28,8 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
 
     const login = async (email: string, password: string) => {
         try {
-            const response = await axios.post('/mathly/signin', { email, password })
+            const hashedPassword = await hashPassword(password)
+            const response = await axios.post('/mathly/signin', { email, password: hashedPassword })
             localStorage.setItem('token', response.data.token)
             localStorage.setItem('user', JSON.stringify(response.data.user))
             setUser(response.data.user)
@@ -53,12 +55,12 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
         password: string,
     ) => {
         try {
-            const response = await axios.post('/mathly/signup', {
+            const hashedPassword = await hashPassword(password)
+            await axios.post('/mathly/signup', {
                 username,
                 email,
-                password,
+                password: hashedPassword,
             })
-            console.log('Signup successful:', response.data)
         } catch (err) {
             const message = axios.isAxiosError(err)
                 ? err.response?.data?.message ?? 'Something went wrong'

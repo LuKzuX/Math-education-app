@@ -16,9 +16,15 @@ function Signup() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSubmitting(true)
     setError(null)
     setMessage(null)
+
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters')
+      return
+    }
+
+    setSubmitting(true)
     try {
       await signup(username, email, password)
       setMessage('Check your email to confirm your account.')
@@ -110,15 +116,17 @@ function Signup() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 autoComplete="new-password"
+                minLength={8}
                 className="w-full bg-slate-950/60 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-colors"
               />
+              <p className="mt-1.5 text-xs text-slate-600">At least 8 characters</p>
             </div>
 
             {error && <p className="text-sm text-rose-400">{error}</p>}
 
             <button
               type="submit"
-              disabled={!username || !email || !password || submitting}
+              disabled={!username || !email || password.length < 8 || submitting}
               className="w-full font-data text-[12px] tracking-widest uppercase text-slate-950 bg-cyan-400
                          rounded-lg px-4 py-3 hover:bg-cyan-300 transition-colors
                          disabled:opacity-40 disabled:cursor-not-allowed"

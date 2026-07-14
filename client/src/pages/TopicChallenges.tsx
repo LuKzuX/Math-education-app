@@ -46,8 +46,8 @@ function TopicChallenges() {
       try {
         const { data } = await axios.get(`/mathly/topics/${topicId}/challenges`)
         setChallenges(data)
-      } catch (error) {
-        console.log(error)
+      } catch {
+        // ignore
       }
     }
     getChallenges()
@@ -66,8 +66,8 @@ function TopicChallenges() {
           return acc
         }, {} as Record<string, Attempt["medal_earned"]>)
         setMedalsByChallenge(medals)
-      } catch (error) {
-        console.log(error)
+      } catch {
+        // ignore
       }
     }
     getUserAttempts()

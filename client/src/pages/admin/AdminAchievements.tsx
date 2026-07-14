@@ -22,8 +22,8 @@ function AdminAchievements() {
     try {
       const { data } = await axios.get("/mathly/achievements")
       setAchievements(data ?? [])
-    } catch (err) {
-      console.log("Failed to fetch achievements:", err)
+    } catch {
+      // ignore
     }
   }
 

@@ -42,8 +42,8 @@ function AdminChallenges() {
         setAlternativesOptions(challenge.alternatives_options ?? [])
         setCorrectAnswer(challenge.correct_answer)
         setHintText(challenge.hint_text)
-      } catch (error) {
-        console.log("Failed to load challenge:", error);
+      } catch {
+        // ignore
       }
     }
     loadChallenge()
@@ -85,18 +85,18 @@ function AdminChallenges() {
 
     try {
       const token = localStorage.getItem('token')
-      const response = isEditMode
-        ? await axios.patch(`/mathly/challenges/${challengeId}`, payload, {
-            headers: { Authorization: `Bearer ${token}` },
-          })
-        : await axios.post(`/mathly/topics/${topicId}/challenges`, payload, {
-            headers: { Authorization: `Bearer ${token}` },
-          })
-
-      console.log(isEditMode ? "Challenge updated:" : "Challenge created:", response.data);
-      if (isEditMode) navigate(`/topics/${topicId}`)
-    } catch (error) {
-      console.log(isEditMode ? "Failed to update challenge:" : "Failed to create challenge:", error);
+      if (isEditMode) {
+        await axios.patch(`/mathly/challenges/${challengeId}`, payload, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        navigate(`/topics/${topicId}`)
+      } else {
+        await axios.post(`/mathly/topics/${topicId}/challenges`, payload, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      }
+    } catch {
+      // ignore
     }
   }
 
@@ -110,8 +110,8 @@ function AdminChallenges() {
         headers: { Authorization: `Bearer ${token}` },
       })
       navigate(`/topics/${topicId}`)
-    } catch (error) {
-      console.log("Failed to delete challenge:", error);
+    } catch {
+      // ignore
     }
   }
   const letters = ['a', 'b', 'c', 'd']

@@ -39,8 +39,8 @@ function Paths() {
             try {
                 const { data } = await axios.get("/mathly/paths")
                 setPaths(data)
-            } catch (error) {
-                console.log(error)
+            } catch {
+                // ignore
             }
         }
         getPaths()

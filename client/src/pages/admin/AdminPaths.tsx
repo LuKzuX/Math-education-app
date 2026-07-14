@@ -34,16 +34,14 @@ function AdminPaths() {
       formData.append('path_icon', pathIcon);
 
       const token = localStorage.getItem('token')
-      const response = await axios.post("/mathly/paths", formData, {
+      await axios.post("/mathly/paths", formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
         },
       });
-
-      console.log("Upload successful:", response.data);
-    } catch (error) {
-      console.log("Upload failed:", error);
+    } catch {
+      // ignore
     }
   }
 

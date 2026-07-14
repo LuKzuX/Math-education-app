@@ -9,6 +9,7 @@ import { RequestHandler } from 'express'
 import { AuthRequest } from '../types/AuthRequest'
 import { buildStorageFileName } from '../utils/storageFileName'
 import { buildVerifyEmail, buildResetPasswordEmail } from '../utils/emailTemplates'
+import { getClientUrl } from '../utils/clientUrl'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -23,7 +24,10 @@ export const getUser: RequestHandler = async (req: AuthRequest, res, next) => {
       .select('*')
       .eq('id', req.user.id)
       .single()
-    if (error) return res.status(500).json({ message: error.message })
+    if (error) {
+      console.error('getUser error:', error)
+      return res.status(500).json({ message: 'Failed to fetch user' })
+    }
     if (!data) return res.status(404).json({ message: 'User not found' })
     const { password: _password, ...safeData } = data
     res.json(safeData)
@@ -45,7 +49,10 @@ export const updateUser: RequestHandler = async (req: AuthRequest, res, next) =>
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(fileName, file.buffer, { contentType: file.mimetype })
-      if (uploadError) return res.status(500).json({ message: uploadError.message })
+      if (uploadError) {
+        console.error('Avatar upload error:', uploadError)
+        return res.status(500).json({ message: 'Failed to upload avatar' })
+      }
 
       const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(fileName)
       avatar_url = publicUrl
@@ -57,14 +64,17 @@ export const updateUser: RequestHandler = async (req: AuthRequest, res, next) =>
         .select('id')
         .eq('email', email)
         .neq('id', user_id)
-      if (error) return res.status(500).json({ message: error.message })
+      if (error) {
+        console.error('Email lookup error:', error)
+        return res.status(500).json({ message: 'Failed to update user' })
+      }
       if ((emailFound?.length ?? 0) >= 1) {
         return res.status(409).json({ message: 'This email already exists' })
       }
 
       const token = crypto.randomBytes(32).toString('hex')
       const expires = new Date(Date.now() + 1000 * 60 * 60);
-      const verifyLink = `${process.env.CLIENT_URL}verify-email?token=${token}`
+      const verifyLink = `${getClientUrl()}verify-email?token=${token}`
 
       await supabase.from('password_reset_tokens').insert({
         user_id: user_id,
@@ -73,13 +83,17 @@ export const updateUser: RequestHandler = async (req: AuthRequest, res, next) =>
       });
 
       const { html, text } = buildVerifyEmail({ verifyLink, expiresInText: '1 hour' })
-      await resend.emails.send({
-        from: 'Mathly <onboarding@resend.dev>',
+      const { error: sendError } = await resend.emails.send({
+        from: 'Mathly <noreply@math-ly.com>',
         to: email,
         subject: 'Verify your new email address',
         html,
         text,
       })
+      if (sendError) {
+        console.error('Resend error:', sendError)
+        return res.status(500).json({ message: 'Failed to send verification email' })
+      }
     }
 
     const updates = Object.fromEntries(
@@ -91,7 +105,10 @@ export const updateUser: RequestHandler = async (req: AuthRequest, res, next) =>
     }
 
     const { error: err } = await supabase.from('users').update(updates).eq('id', user_id);
-    if (err) return res.status(500).json({ message: err.message })
+    if (err) {
+      console.error('User update error:', err)
+      return res.status(500).json({ message: 'Failed to update user' })
+    }
 
     res.status(200).json({ message: 'User updated successfully', ...updates });
   } catch (error) {
@@ -107,7 +124,10 @@ export const getUserAttempts: RequestHandler = async (req: AuthRequest, res, nex
       .from("attempts")
       .select("*")
       .eq('user_id', id)
-    if (error) return res.status(500).json({ error: error.message })
+    if (error) {
+      console.error('getUserAttempts error:', error)
+      return res.status(500).json({ message: 'Failed to fetch attempts' })
+    }
     res.json(data)
   } catch (error) {
     next(error)
@@ -142,7 +162,10 @@ export const signup: RequestHandler = async (req, res, next) => {
       .select('id')
       .eq('email', email)
 
-    if (error) return res.status(500).json({ message: error.message })
+    if (error) {
+      console.error('Resend error:', error)
+      return res.status(500).json({ message: 'Failed to send verification email' })
+    }
     if ((emailFound?.length ?? 0) >= 1) {
       return res.status(409).json({ message: 'This email already exists' })
     }
@@ -161,18 +184,23 @@ export const signup: RequestHandler = async (req, res, next) => {
       })
 
     if (profileError) {
-      return res.status(500).json({ message: profileError.message })
+      console.error('signup insert error:', profileError)
+      return res.status(500).json({ message: 'Failed to create account' })
     }
 
-    const verifyLink = `${process.env.CLIENT_URL}verify-email?token=${token}`
+    const verifyLink = `${getClientUrl()}verify-email?token=${token}`
     const { html, text } = buildVerifyEmail({ verifyLink, username, expiresInText: '24 hours' })
-    await resend.emails.send({
-      from: 'Mathly <onboarding@resend.dev>',
+    const { error: sendError } = await resend.emails.send({
+      from: 'Mathly <noreply@math-ly.com>',
       to: email,
       subject: 'Confirm your Mathly account',
       html,
       text,
     })
+    if (sendError) {
+      console.error('Resend error:', sendError)
+      return res.status(500).json({ message: 'Failed to send verification email' })
+    }
 
     res
       .status(200)
@@ -202,7 +230,10 @@ export const verifyEmail: RequestHandler = async (req, res, next) => {
       email: pending.email,
       password: pending.password,
     })
-    if (insertError) return res.status(500).json({ message: insertError.message })
+    if (insertError) {
+      console.error('verifyEmail insert error:', insertError)
+      return res.status(500).json({ message: 'Failed to verify email' })
+    }
 
     await supabase.from('pending_users').delete().eq('token', token)
 
@@ -267,7 +298,7 @@ export const forgotPassword: RequestHandler = async (req, res, next) => {
     }
 
     const token = crypto.randomBytes(32).toString('hex')
-    const resetLink = `${process.env.CLIENT_URL}password-reset?token=${token}`
+    const resetLink = `${getClientUrl()}password-reset?token=${token}`
 
     await supabase.from('password_reset_tokens').insert({
       user_id: user.id,
@@ -276,13 +307,14 @@ export const forgotPassword: RequestHandler = async (req, res, next) => {
     })
 
     const { html, text } = buildResetPasswordEmail({ resetLink, username: user.username, expiresInText: '1 hour' })
-    await resend.emails.send({
-      from: 'Mathly <onboarding@resend.dev>',
+    const { error: sendError } = await resend.emails.send({
+      from: 'Mathly <noreply@math-ly.com>',
       to: email,
       subject: 'Reset your Mathly password',
       html,
       text,
     })
+    if (sendError) console.error('Resend error:', sendError)
 
     res.status(200).json(genericResponse)
   } catch (error) {

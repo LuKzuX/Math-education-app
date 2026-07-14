@@ -42,10 +42,8 @@ function PathTopics() {
       try {
         const { data } = await axios.get(`/mathly/paths/${pathId}/topics`)
         setTopics(data)
-        console.log(data);
-
-      } catch (error) {
-        console.log(error)
+      } catch {
+        // ignore
       }
     }
     getTopics()

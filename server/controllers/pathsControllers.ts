@@ -15,7 +15,10 @@ export const createPath: RequestHandler = async (req, res, next) => {
       .select()
       .single()
 
-    if (error) return res.status(409).json({ error: error.message })
+    if (error) {
+      console.error('createPath error:', error)
+      return res.status(409).json({ error: 'Failed to create path' })
+    }
     res.send(data)
   } catch (error) {
     next(error)
@@ -25,7 +28,10 @@ export const createPath: RequestHandler = async (req, res, next) => {
 export const getPaths: RequestHandler = async (req, res, next) => {
   try {
     const { data, error } = await supabase.from('paths').select('*')
-    if (error) return res.status(500).json({ error: error.message })
+    if (error) {
+      console.error('getPaths error:', error)
+      return res.status(500).json({ error: 'Failed to fetch paths' })
+    }
     res.send(data)
   } catch (error) {
     next(error)
@@ -40,7 +46,10 @@ export const updatePath: RequestHandler = async (req, res, next) => {
     if (file) {
       const fileName = buildStorageFileName(file.originalname)
       const { error: uploadError } = await supabase.storage.from('path_icons').upload(fileName, file.buffer, { contentType: file.mimetype })
-      if (uploadError) return res.status(500).json({ error: uploadError.message })
+      if (uploadError) {
+        console.error('Path icon upload error:', uploadError)
+        return res.status(500).json({ error: 'Failed to upload path icon' })
+      }
       const { data: { publicUrl } } = supabase.storage.from('path_icons').getPublicUrl(fileName)
       req.body.path_icon = publicUrl
     }
@@ -56,7 +65,10 @@ export const updatePath: RequestHandler = async (req, res, next) => {
       .select()
       .single()
 
-    if (error) return res.status(409).json({ error: error.message })
+    if (error) {
+      console.error('updatePath error:', error)
+      return res.status(409).json({ error: 'Failed to update path' })
+    }
     res.send(data)
   } catch (error) {
     next(error)
@@ -67,7 +79,10 @@ export const deletePath: RequestHandler = async (req, res, next) => {
   try {
     const { path_id } = req.params
     const { error } = await supabase.from('paths').delete().eq('id', path_id)
-    if (error) return res.status(409).json({ error: error.message })
+    if (error) {
+      console.error('deletePath error:', error)
+      return res.status(409).json({ error: 'Failed to delete path' })
+    }
     res.sendStatus(204)
   } catch (error) {
     next(error)

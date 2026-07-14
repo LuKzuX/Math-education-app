@@ -10,7 +10,10 @@ export const getAchievements: RequestHandler = async (req, res, next) => {
       .from('achievements')
       .select('*')
 
-    if (error) return res.status(500).json({ error: error.message })
+    if (error) {
+      console.error('getAchievements error:', error)
+      return res.status(500).json({ error: 'Failed to fetch achievements' })
+    }
     return res.status(200).json(data)
   } catch (error) {
     next(error)
@@ -26,7 +29,10 @@ export const getUserAchievements: RequestHandler = async (req: AuthRequest, res,
       .select('*, achievements(*)')
       .eq('user_id', user_id)
 
-    if (error) return res.status(500).json({ error: error.message })
+    if (error) {
+      console.error('getUserAchievements error:', error)
+      return res.status(500).json({ error: 'Failed to fetch user achievements' })
+    }
     return res.status(200).json(data)
   } catch (error) {
     next(error)
@@ -45,7 +51,10 @@ export const createAchievement: RequestHandler = async (req: AuthRequest, res, n
 
     const { error: uploadError } = await supabase.storage.from('achievements_icons')
       .upload(fileName, file.buffer, { contentType: file.mimetype })
-    if (uploadError) return res.status(500).json({ error: uploadError.message })
+    if (uploadError) {
+      console.error('Achievement icon upload error:', uploadError)
+      return res.status(500).json({ error: 'Failed to upload achievement icon' })
+    }
 
     const { data: { publicUrl } } = supabase.storage
       .from('achievements_icons')
@@ -61,7 +70,10 @@ export const createAchievement: RequestHandler = async (req: AuthRequest, res, n
       .select()
       .single()
 
-    if (insertError) return res.status(409).json({ error: insertError.message })
+    if (insertError) {
+      console.error('createAchievement insert error:', insertError)
+      return res.status(409).json({ error: 'Failed to create achievement' })
+    }
     res.status(201).json(ach)
   } catch (error) {
     next(error)

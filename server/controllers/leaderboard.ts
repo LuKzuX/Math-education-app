@@ -12,7 +12,10 @@ export const getLeaderboard: RequestHandler = async (req, res, next) => {
             .select("id, username, avatar_url, total_xp, user_level")
             .order('total_xp', { ascending: false })
 
-        if (error) return res.status(500).json({ error: error.message })
+        if (error) {
+            console.error('getLeaderboard error:', error)
+            return res.status(500).json({ error: 'Failed to fetch leaderboard' })
+        }
         res.json(data)
     } catch (error) {
         next(error)

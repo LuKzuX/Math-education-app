@@ -31,10 +31,7 @@ export const userAuth: RequestHandler = (req, res, next) => {
 
     next()
   } catch (error) {
-    if (error instanceof Error) {
-      res.status(401).json({ message: error.message })
-    } else {
-      res.status(401).json({ message: 'Invalid token' })
-    }
+    console.error('JWT verification error:', error)
+    res.status(401).json({ message: 'Invalid or expired token' })
   }
 }

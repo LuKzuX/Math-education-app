@@ -40,8 +40,8 @@ function AdminTopics() {
     try {
       const { data } = await axios.get(`/mathly/paths/${pathId}/topics`)
       setTopics(data)
-    } catch (error) {
-      console.log("Failed to fetch topics:", error);
+    } catch {
+      // ignore
     }
   }
 
@@ -65,17 +65,16 @@ function AdminTopics() {
       formData.append('topic_icon', topicIcon);
 
       const token = localStorage.getItem('token')
-      const response = await axios.post(`/mathly/paths/${pathId}/topics`, formData, {
+      await axios.post(`/mathly/paths/${pathId}/topics`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
         },
       });
 
-      console.log("Upload successful:", response.data);
       await fetchTopics()
-    } catch (error) {
-      console.log("Upload failed:", error);
+    } catch {
+      // ignore
     }
   }
 
