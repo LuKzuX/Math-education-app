@@ -164,6 +164,10 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
   res.status(500).json({ message: 'Internal server error' })
 })
 
-app.listen(port, () => {
-  console.log(`Server running at ${port}`);
-});
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`Server running at ${port}`);
+  });
+}
+
+export default app;
