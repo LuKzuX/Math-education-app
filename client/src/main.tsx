@@ -1,7 +1,10 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import axios from 'axios'
 import './index.css'
+
+axios.defaults.baseURL = 'https://math-education-app.vercel.app/'
 import { AuthContextProvider } from './context/authContext.tsx'
 import App from './App.tsx'
 import Landing from './pages/Landing.tsx'

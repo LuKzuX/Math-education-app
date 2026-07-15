@@ -7,11 +7,6 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     host: true,
-    proxy: {
-      '/mathly': {
-        target: 'http://localhost:4001',
-        changeOrigin: true,
-      },
-    },
+   
   },
 })
