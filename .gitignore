@@ -3,3 +3,5 @@
 /server/.env
 /node_modules
 /.vercel
+.vercel
+.env*
