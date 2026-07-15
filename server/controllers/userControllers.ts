@@ -172,7 +172,7 @@ export const signup: RequestHandler = async (req, res, next) => {
       return res.status(500).json({ message: 'Failed to create account' })
     }
 
-    const verifyLink = `${getClientUrl()}verify-email?token=${token}`
+    const verifyLink = `${getClientUrl()}mathly/verify-email?token=${token}`
     const { html, text } = buildVerifyEmail({ verifyLink, username, expiresInText: '24 hours' })
     const { error: sendError } = await resend.emails.send({
       from: 'Mathly <noreply@math-ly.com>',
