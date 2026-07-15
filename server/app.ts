@@ -6,10 +6,10 @@ import { AuthRequest } from './types/AuthRequest'
 import { supabase } from './db/connection';
 import { userAuth } from './middlewares/userAuth';
 import { getClientUrl } from './utils/clientUrl';
-import Stripe from "stripe";
+// import Stripe from "stripe";
 
 config();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
+// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 const app = express();
 const port: number = 4001;
 
