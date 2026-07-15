@@ -134,22 +134,6 @@ export const getUserAttempts: RequestHandler = async (req: AuthRequest, res, nex
   }
 }
 
-export const getUserAchievments: RequestHandler = async (req: AuthRequest, res, next) => {
-
-  const user_id = req.user?.id
-  if (!user_id) return res.status(401).json({ message: 'Unauthorized' });
-  const { data, error } = await supabase
-    .from("users_achievements")
-    .select("achievement_id")
-    .eq("user_id", user_id)
-
-  const { data: achievements, error: err } = await supabase
-    .from("achievements")
-    .select("*")
-    .eq("achievement_id", data)
-  res.send(achievements)
-}
-
 export const signup: RequestHandler = async (req, res, next) => {
   try {
     const { username, email, password } = req.body
@@ -163,8 +147,8 @@ export const signup: RequestHandler = async (req, res, next) => {
       .eq('email', email)
 
     if (error) {
-      console.error('Resend error:', error)
-      return res.status(500).json({ message: 'Failed to send verification email' })
+      console.error('Email lookup error:', error)
+      return res.status(500).json({ message: 'Failed to create account' })
     }
     if ((emailFound?.length ?? 0) >= 1) {
       return res.status(409).json({ message: 'This email already exists' })
@@ -173,7 +157,7 @@ export const signup: RequestHandler = async (req, res, next) => {
     const token = crypto.randomBytes(32).toString('hex')
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000)
 
-    const { data: profile, error: profileError } = await supabase
+    const { error: profileError } = await supabase
       .from('pending_users')
       .insert({
         username,
